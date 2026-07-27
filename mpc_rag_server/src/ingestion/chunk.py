@@ -1,12 +1,19 @@
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
 from convert import docling_docs
-from docling.chunkers import HybridChunker
+from docling.chunking import HybridChunker
+from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
+from transformers import AutoTokenizer
 
-tokenizer = Tokenizer(BPE())
-chunker = HybridChunker(tokenizer="sentence-transformers/all-MiniLM-L6-v2")
-doucument = docling_docs[0] 
-chunk_stream = chunker.chunk(docling_doc)
+
+EMBED_MODEL_ID = 'nomic-ai/nomic-embed-text-v1.5'
+
+tokenizer = HuggingFaceTokenizer(
+    tokenizer=AutoTokenizer.from_pretrained(EMBED_MODEL_ID),
+)
+chunker = HybridChunker(tokenizer=tokenizer)
+document = docling_docs[0] 
+chunk_stream = chunker.chunk(document)
 print("\n--- Extracted Chunks ---")
 for i, chunk in enumerate(chunk_stream):
     serialized_text = chunker.serialize(chunk)
