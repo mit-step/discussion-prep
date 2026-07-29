@@ -13,11 +13,12 @@ tokenizer = HuggingFaceTokenizer(
 )
 chunker = HybridChunker(tokenizer=tokenizer)
 document = docling_docs[0] 
-chunk_stream = chunker.chunk(document)
-print("\n--- Extracted Chunks ---")
-for i, chunk in enumerate(chunk_stream):
-    serialized_text = chunker.serialize(chunk)
+chunked_docs = [chunker.chunk(document) for document in docling_docs]
+# chunk_stream = chunker.chunk(document)
+# print("\n--- Extracted Chunks ---")
+# for i, chunk in enumerate(chunk_stream):
+#     serialized_text = chunker.serialize(chunk)
     
-    print(f"\n[Chunk {i+1}]")
-    print(f"Text Content: {serialized_text[:200]}...")
-    print(f"Metadata (Page/BBox): {chunk.meta}")
+#     print(f"\n[Chunk {i+1}]")
+#     print(f"Text Content: {serialized_text[:200]}...")
+#     print(f"Metadata (Page/BBox): {chunk.meta}")
