@@ -12,13 +12,12 @@ tokenizer = HuggingFaceTokenizer(
     tokenizer=AutoTokenizer.from_pretrained(EMBED_MODEL_ID),
 )
 chunker = HybridChunker(tokenizer=tokenizer)
-document = docling_docs[0] 
-chunked_docs = [chunker.chunk(document) for document in docling_docs]
-# chunk_stream = chunker.chunk(document)
-# print("\n--- Extracted Chunks ---")
-# for i, chunk in enumerate(chunk_stream):
-#     serialized_text = chunker.serialize(chunk)
-    
-#     print(f"\n[Chunk {i+1}]")
-#     print(f"Text Content: {serialized_text[:200]}...")
-#     print(f"Metadata (Page/BBox): {chunk.meta}")
+chunked_docs = []
+for doc in docling_docs:
+    doc_uuid = None
+    for chunk in chunker.chunk(doc):
+        chunk_uuid = None
+        chunk.metadata['doc_uuid'] = doc_uuid
+        chunk.metadata['chunk_uuid'] = chunk_uuid  
+        chunked_docs.append(chunk)
+
