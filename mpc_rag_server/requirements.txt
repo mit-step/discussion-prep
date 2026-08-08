@@ -1,0 +1,6 @@
+sqlite
+pathlib
+docling
+uuid
+struct
+json
