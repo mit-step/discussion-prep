@@ -1,9 +1,9 @@
 import sqlite3
 import struct
 import json
-import recorded_chunks from chunk
 from pathlib import Path
-import generate_embedding from embedding
+from chunk import recorded_chunks
+from embedding import generate_embedding
 
 import sqlite_vec
 
@@ -94,24 +94,28 @@ def insert_chunk(conn, chunk_uuid, doc_uuid, source_type, content, embedding, ex
     return row_id
 
 
-for record in recorded_chunks:
-    embedding = generate_embedding(record["text"]) 
-    insert_chunk(
-        db,
-        chunk_uuid=record["chunk_uuid"],
-        doc_uuid=record["doc_uuid"],
-        source_type=record.get("source_type", "pdf"),
-        content=record["text"],
-        embedding=embedding,
-        extra_metadata={
-            "headings": record["headings"],
-            "page_no": record["page_no"],
-            "filename": record["filename"],
-        },
-    )
+def main():
+    db = init_database(DATABASE_PATH)
+    for record in recorded_chunks:
+        embedding = generate_embedding(record["text"]) 
+        insert_chunk(
+            db,
+            chunk_uuid=record["chunk_uuid"],
+            doc_uuid=record["doc_uuid"],
+            source_type=record.get("source_type", "pdf"),
+            content=record["text"],
+            embedding=embedding,
+            extra_metadata={
+                "headings": record["headings"],
+                "page_no": record["page_no"],
+                "filename": record["filename"],
+            },
+        )
+    return db
 
 
-
+if __name__ == "__main__":
+    main()
 
 
 
