@@ -4,3 +4,4 @@ docling
 uuid
 struct
 json
+fastembed
