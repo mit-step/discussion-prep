@@ -2,7 +2,7 @@ import sqlite3
 import struct
 import json
 from pathlib import Path
-from chunk import recorded_chunks
+from chunk import 
 from embedding import generate_embedding
 
 import sqlite_vec

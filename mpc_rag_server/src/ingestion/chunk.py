@@ -1,4 +1,4 @@
-from convert import docling_docs
+from convert import retrieve_documents, convert_documents
 from docling.chunking import HybridChunker
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from transformers import AutoTokenizer
@@ -37,7 +37,10 @@ def chunk_documents(docs, chunker):
 
 
 if __name__ == "__main__":
+    docs = retrieve_documents()
+    docling_docs = convert_documents(docs)
     chunker = build_chunker()
     recorded_chunks = chunk_documents(docling_docs, chunker)
     print(f"Chunked {len(recorded_chunks)} chunks from {len(docling_docs)} docs")
+    print(f"Sample chunk: {recorded_chunks[0] if recorded_chunks else 'No chunks generated'}")
 
