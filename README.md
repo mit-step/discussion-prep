@@ -5,3 +5,4 @@ Upon receiving access to this project, please **add your assigned tasks / module
 
 ## Responsibilities / Points of Contact
 * Pipitchaya Sridam (Sprite) - Memo Evaluator Agent. Contact: [sprite48@mit.edu](mailto:sprite48@mit.edu)
+* Cesia Massott - RAG with hybrid search. Contact [cesiam@mit.edu](mailto:cesiam@mit.edu)
