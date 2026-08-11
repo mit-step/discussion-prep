@@ -2,7 +2,8 @@ import sqlite3
 import struct
 import json
 from pathlib import Path
-from chunk import 
+from convert import retrieve_documents, convert_documents
+from chunk import chunk_documents, build_chunker
 from embedding import generate_embedding
 
 import sqlite_vec
@@ -69,8 +70,6 @@ def init_database(db_path):
     conn.commit()
     return conn
 
-db = init_database(DATABASE_PATH)
-
 def serialize_embedding(embedding):
     embedding_bytes = struct.pack(f'{len(embedding)}f', *embedding)
     return embedding_bytes
@@ -96,6 +95,10 @@ def insert_chunk(conn, chunk_uuid, doc_uuid, source_type, content, embedding, ex
 
 def main():
     db = init_database(DATABASE_PATH)
+    docs = retrieve_documents()
+    docling_docs = convert_documents(docs)
+    chunker = build_chunker()
+    recorded_chunks = chunk_documents(docling_docs, chunker)
     for record in recorded_chunks:
         embedding = generate_embedding(record["text"]) 
         insert_chunk(
