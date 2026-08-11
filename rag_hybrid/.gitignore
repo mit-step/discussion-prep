@@ -1,4 +1,6 @@
 data/
+data_quarantine/
+*.db
 
 .env
 __pycache__/

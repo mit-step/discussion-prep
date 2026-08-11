@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from convert import retrieve_documents, convert_documents
 from chunk import chunk_documents, build_chunker
-from embedding import generate_embedding
+from embed import generate_embedding
 
 import sqlite_vec
 
