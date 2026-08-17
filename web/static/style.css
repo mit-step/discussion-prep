@@ -86,6 +86,12 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+.bubble.ai.loading {
+  color: var(--muted);
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+}
+
 .bubble.student {
   background: var(--student-bubble);
   color: var(--student-fg);

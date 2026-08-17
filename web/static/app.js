@@ -6,6 +6,8 @@ const roundBadge = document.getElementById("round-badge");
 
 let sessionId = null;
 let phase = "none"; // none | awaiting_argument | in_round | completed
+let roundsTotal = null;
+let currentRound = 0;
 
 function addBubble(role, text) {
   const el = document.createElement("div");
@@ -14,6 +16,27 @@ function addBubble(role, text) {
   chatEl.appendChild(el);
   chatEl.scrollTop = chatEl.scrollHeight;
   return el;
+}
+
+function addLoadingBubble(label) {
+  const el = document.createElement("div");
+  el.className = "bubble ai loading";
+  el.textContent = label;
+  chatEl.appendChild(el);
+  chatEl.scrollTop = chatEl.scrollHeight;
+
+  let dots = 0;
+  const timer = setInterval(() => {
+    dots = (dots + 1) % 4;
+    el.textContent = label + ".".repeat(dots);
+  }, 450);
+
+  return {
+    stop() {
+      clearInterval(timer);
+      el.remove();
+    },
+  };
 }
 
 function setRoundBadge(text) {
@@ -52,6 +75,8 @@ async function startNewSession() {
     const data = await api("/api/session");
     sessionId = data.session_id;
     phase = "awaiting_argument";
+    roundsTotal = data.rounds_total;
+    currentRound = 0;
     addBubble("system", `New session started. Rounds: ${data.rounds_total}`);
     addBubble("ai", "State your argument.");
     inputEl.placeholder = "State your argument…";
@@ -153,24 +178,32 @@ async function send() {
   inputEl.value = "";
   setBusy(true);
 
+  const isFinalRound = phase === "in_round" && currentRound === roundsTotal;
+  const loading = phase !== "completed" ? addLoadingBubble(isFinalRound ? "Grading" : "Thinking") : null;
+
   try {
     if (phase === "awaiting_argument") {
       const data = await api(`/api/session/${sessionId}/argument`, {
         body: JSON.stringify({ argument_text: text }),
       });
+      loading.stop();
       phase = "in_round";
+      currentRound = data.round;
+      roundsTotal = data.rounds_total;
       setRoundBadge(`Round ${data.round}/${data.rounds_total}`);
       addBubble("ai", data.question);
     } else if (phase === "in_round") {
       const data = await api(`/api/session/${sessionId}/respond`, {
         body: JSON.stringify({ response_text: text }),
       });
+      loading.stop();
       if (data.completed) {
         phase = "completed";
         setRoundBadge("Evaluation");
         addBubble("system", "Grading complete.");
         renderEvaluation(data.evaluation);
       } else {
+        currentRound = data.round;
         setRoundBadge(`Round ${data.round}/${data.rounds_total}`);
         addBubble("ai", data.question);
       }
@@ -178,6 +211,7 @@ async function send() {
       addBubble("system", "Session complete — start a new session to practice again.");
     }
   } catch (err) {
+    if (loading) loading.stop();
     addBubble("system", `Error: ${err.message}`);
   } finally {
     setBusy(phase === "completed");
