@@ -3,11 +3,79 @@ const inputEl = document.getElementById("input-box");
 const sendBtn = document.getElementById("send-btn");
 const newSessionBtn = document.getElementById("new-session-btn");
 const roundBadge = document.getElementById("round-badge");
+const micBtn = document.getElementById("mic-btn");
 
 let sessionId = null;
 let phase = "none"; // none | awaiting_argument | in_round | completed
 let roundsTotal = null;
 let currentRound = 0;
+
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isRecording = false;
+let voiceBaseText = "";
+let voiceFinalTranscript = "";
+
+function updateMicButton() {
+  micBtn.classList.toggle("recording", isRecording);
+  micBtn.textContent = isRecording ? "⏹" : "🎤";
+  micBtn.title = isRecording ? "Stop recording" : "Start voice input";
+}
+
+function stopRecording() {
+  if (recognition) recognition.stop();
+}
+
+function startRecording() {
+  if (!SpeechRecognitionCtor || isRecording) return;
+
+  voiceBaseText = inputEl.value.trim() ? inputEl.value.trim() + " " : "";
+  voiceFinalTranscript = "";
+
+  recognition = new SpeechRecognitionCtor();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = "en-US";
+
+  recognition.onresult = (event) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        voiceFinalTranscript += transcript + " ";
+      } else {
+        interim += transcript;
+      }
+    }
+    inputEl.value = voiceBaseText + voiceFinalTranscript + interim;
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    updateMicButton();
+  };
+
+  recognition.start();
+  isRecording = true;
+  updateMicButton();
+}
+
+if (!SpeechRecognitionCtor) {
+  micBtn.disabled = true;
+  micBtn.title = "Voice input isn't supported in this browser (try Chrome or Edge)";
+} else {
+  micBtn.addEventListener("click", () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  });
+}
 
 function addBubble(role, text) {
   const el = document.createElement("div");
@@ -51,6 +119,10 @@ function setRoundBadge(text) {
 function setBusy(busy) {
   sendBtn.disabled = busy;
   inputEl.disabled = busy;
+  if (SpeechRecognitionCtor) {
+    if (busy && isRecording) stopRecording();
+    micBtn.disabled = busy;
+  }
 }
 
 async function api(path, options) {
