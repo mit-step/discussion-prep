@@ -14,12 +14,10 @@ def convert_documents(docs):
     docling_docs = [converter.convert(doc_path).document for doc_path in docs]
     return docling_docs
 
-# docling_docs = convert_documents(docs)
-
-
 if __name__ == "__main__":
     docs = retrieve_documents()
-    docling_docs = convert_documents(docs) 
-    print(f"Converted {len(docling_docs)} documents from {len(docs)} files")
+    docs = convert_documents(docs) 
+    # print(f"Converted {len(docs)} documents from {len(docs)} files")
+    pprint(f'First doc object content: {docs[0].texts}')
 
 

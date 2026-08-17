@@ -6,7 +6,7 @@ embedding_model = TextEmbedding(model_name=MODEL)
 
 def generate_embedding(text):
     embeddings = embedding_model.embed([text])
-    return embeddings[0].tolist()
+    return list(embeddings)[0].tolist()
 
 def generate_embeddings(texts):
     embeddings = embedding_model.embed(texts)

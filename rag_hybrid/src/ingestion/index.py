@@ -3,7 +3,7 @@ import struct
 import json
 from pathlib import Path
 from convert import retrieve_documents, convert_documents
-from chunk import chunk_documents, build_chunker
+from chunking import chunk_documents, build_chunker
 from embed import generate_embedding
 
 import sqlite_vec
@@ -93,8 +93,8 @@ def insert_chunk(conn, chunk_uuid, doc_uuid, source_type, content, embedding, ex
     return row_id
 
 
-def main():
-    db = init_database(DATABASE_PATH)
+def main(db_path=DATABASE_PATH):
+    db = init_database(db_path)
     docs = retrieve_documents()
     docling_docs = convert_documents(docs)
     chunker = build_chunker()
