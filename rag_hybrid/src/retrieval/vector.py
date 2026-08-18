@@ -1,12 +1,12 @@
 import sqlite3
-from pathlib import Path
 import sys
-import os
+from pathlib import Path
 
-folder_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src', 'ingestion'))
-sys.path.append(folder_path)
+_SRC = Path(__file__).resolve().parents[1]
+sys.path.append(str(_SRC))
+sys.path.append(str(_SRC / "ingestion"))
 
-from index import serialize_embedding 
+from index import serialize_embedding
 
 def vector_search(conn, query_embedding: list[float], top_k: int = 100):
     cursor = conn.cursor()

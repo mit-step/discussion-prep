@@ -1,8 +1,12 @@
 import sqlite3
+import sys
 from pathlib import Path
 
-DATABASE_PATH = Path("mvp.db")
-EMBEDDING_DIM = 384  
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from config import DATABASE_PATH
+
+
 
 def bm25_search(query, db_path, top_k=5):
     conn = sqlite3.connect(db_path)

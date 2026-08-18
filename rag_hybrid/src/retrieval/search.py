@@ -1,10 +1,14 @@
+import sqlite3
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
 from lexical import bm25_search
 from vector import vector_search
-from pathlib import Path
-import sqlite3
-import sqlite_vec
+from config import DATABASE_PATH
 
-DB_PATH = Path("mvp.db")
+import sqlite_vec
 
 def connect(db_path):
     conn = sqlite3.connect(db_path)

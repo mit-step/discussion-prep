@@ -2,6 +2,10 @@ import sqlite3
 import struct
 import json
 from pathlib import Path
+import sys
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
 from convert import retrieve_documents, convert_documents
 from chunking import chunk_documents, build_chunker
 from embed import generate_embedding
