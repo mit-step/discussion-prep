@@ -1,10 +1,14 @@
 from docling.document_converter import DocumentConverter
 from pathlib import Path
+import sys
+from pprint import pprint
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from config import RESOURCES_DIR
 
 
 def retrieve_documents():
-    data_path = Path(__file__).parent.parent.parent / "data"
-    docs = [item for item in data_path.iterdir() if item.is_file()]
+    data_folder_path = RESOURCES_DIR
+    docs = [item for item in data_folder_path.iterdir() if item.is_file()]
     return docs
 
 # docs = retrieve_documents() 
