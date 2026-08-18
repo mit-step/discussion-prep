@@ -12,8 +12,7 @@ from embed import generate_embedding
 
 import sqlite_vec
 
-DATABASE_PATH = Path("mvp.db")
-EMBEDDING_DIM = 384  
+from config import DATABASE_PATH, EMBEDDING_DIM 
 
 
 def init_database(db_path):
