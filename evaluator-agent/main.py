@@ -53,7 +53,7 @@ def main() -> None:
     agent = SocraticAgent(rubric_items=rubric_items, reading_text=reading_text)
 
     for round_num in range(1, ROUNDS + 1):
-        question = agent.ask_question(argument)
+        question = agent.ask_question(argument, round_num=round_num)
         print(f"\n[{round_num}/{ROUNDS}] {question}")
         response = input("> ").strip()
         argument.rounds.append(SocraticExchange(question=question, response=response))
