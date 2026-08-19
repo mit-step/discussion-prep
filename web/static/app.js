@@ -4,9 +4,10 @@ const sendBtn = document.getElementById("send-btn");
 const newSessionBtn = document.getElementById("new-session-btn");
 const roundBadge = document.getElementById("round-badge");
 const micBtn = document.getElementById("mic-btn");
+const avatarEl = document.querySelector(".avatar-circle");
 
 let sessionId = null;
-let phase = "none"; // none | awaiting_argument | in_round | completed
+let phase = "none"; // none | awaiting_topic | awaiting_argument | in_round | completed
 let roundsTotal = null;
 let currentRound = 0;
 
@@ -87,6 +88,8 @@ function addBubble(role, text) {
 }
 
 function addLoadingBubble(label) {
+  avatarEl.classList.add("thinking");
+
   const el = document.createElement("div");
   el.className = "bubble ai loading";
   el.textContent = label;
@@ -103,8 +106,19 @@ function addLoadingBubble(label) {
     stop() {
       clearInterval(timer);
       el.remove();
+      avatarEl.classList.remove("thinking");
     },
   };
+}
+
+function addTranscriptLink(id) {
+  const el = document.createElement("a");
+  el.href = `/transcript/${id}`;
+  el.target = "_blank";
+  el.className = "bubble system transcript-link";
+  el.textContent = "View full transcript →";
+  chatEl.appendChild(el);
+  chatEl.scrollTop = chatEl.scrollHeight;
 }
 
 function setRoundBadge(text) {
@@ -146,12 +160,11 @@ async function startNewSession() {
   try {
     const data = await api("/api/session");
     sessionId = data.session_id;
-    phase = "awaiting_argument";
+    phase = "awaiting_topic";
     roundsTotal = data.rounds_total;
     currentRound = 0;
-    addBubble("system", `New session started. Rounds: ${data.rounds_total}`);
-    addBubble("ai", "State your argument.");
-    inputEl.placeholder = "State your argument…";
+    addBubble("ai", "Welcome! I'm here to help you prepare your legal argument before class. We'll work through it together — I'll ask a few questions to help you develop your thinking, and at the end I'll suggest a score to give you a sense of where you stand. What case or reading will your argument be based on?");
+    inputEl.placeholder = "Name the case or reading…";
   } catch (err) {
     addBubble("system", `Error: ${err.message}`);
   } finally {
@@ -221,6 +234,15 @@ function renderEvaluation(evaluation) {
       head.innerHTML = `<span>${item.criterion}</span><span>${item.points_awarded}/${item.max_points}</span>`;
       row.appendChild(head);
 
+      const meter = document.createElement("div");
+      meter.className = "meter";
+      meter.style.marginTop = "0.35rem";
+      const fill = document.createElement("div");
+      fill.className = "meter-fill";
+      fill.style.width = `${(item.points_awarded / item.max_points) * 100}%`;
+      meter.appendChild(fill);
+      row.appendChild(meter);
+
       if (item.feedback) {
         const fb = document.createElement("div");
         fb.className = "rubric-item-feedback";
@@ -251,10 +273,21 @@ async function send() {
   setBusy(true);
 
   const isFinalRound = phase === "in_round" && currentRound === roundsTotal;
-  const loading = phase !== "completed" ? addLoadingBubble(isFinalRound ? "Grading" : "Thinking") : null;
+  const loading = phase !== "completed" ? addLoadingBubble(isFinalRound ? "Evaluating" : "Thinking") : null;
 
   try {
-    if (phase === "awaiting_argument") {
+    if (phase === "awaiting_topic") {
+      const data = await api(`/api/session/${sessionId}/topic`, {
+        body: JSON.stringify({ topic_text: text }),
+      });
+      loading.stop();
+      phase = "awaiting_argument";
+      const docLabel = data.source_docs.length > 0
+        ? data.source_docs.join(", ")
+        : "the available course materials";
+      addBubble("ai", `Got it — I'll ground our discussion in ${docLabel}. Now go ahead and state your argument.`);
+      inputEl.placeholder = "State your argument…";
+    } else if (phase === "awaiting_argument") {
       const data = await api(`/api/session/${sessionId}/argument`, {
         body: JSON.stringify({ argument_text: text }),
       });
@@ -272,8 +305,9 @@ async function send() {
       if (data.completed) {
         phase = "completed";
         setRoundBadge("Evaluation");
-        addBubble("system", "Grading complete.");
+        addBubble("system", "Here's your suggested score.");
         renderEvaluation(data.evaluation);
+        addTranscriptLink(sessionId);
       } else {
         currentRound = data.round;
         setRoundBadge(`Round ${data.round}/${data.rounds_total}`);

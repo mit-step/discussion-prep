@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Session Transcript</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --fg: #1a1a1a;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #2563eb;
+      --card-bg: #f9fafb;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111827;
+        --fg: #f3f4f6;
+        --muted: #9ca3af;
+        --border: #374151;
+        --accent: #60a5fa;
+        --card-bg: #1f2937;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      padding: 2.5rem 1.5rem;
+    }
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .page-header { border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    .page-header h1 { font-size: 1.4rem; margin: 0 0 0.3rem; }
+    .page-header .meta { color: var(--muted); font-size: 0.88rem; }
+
+    section h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 0 0 0.75rem;
+    }
+    .argument-text {
+      line-height: 1.6;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+    }
+    .exchange { display: flex; flex-direction: column; gap: 0.6rem; }
+    .exchange + .exchange { margin-top: 1.2rem; }
+    .exchange-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .exchange-q {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      line-height: 1.5;
+    }
+    .exchange-a {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      line-height: 1.5;
+    }
+
+    /* scores */
+    .score-grid { display: flex; flex-direction: column; gap: 0.9rem; }
+    .score-row {}
+    .score-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      margin-bottom: 0.35rem;
+    }
+    .score-head .label { color: var(--muted); }
+    .meter {
+      height: 6px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .meter-fill { height: 100%; background: var(--accent); }
+    .score-feedback {
+      font-size: 0.83rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+    .rubric-item { border-top: 1px solid var(--border); padding-top: 0.75rem; }
+    .rubric-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .error { color: var(--muted); text-align: center; padding: 3rem 0; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="content"><p class="error">Loading…</p></div>
+</div>
+
+<script>
+const sessionId = window.location.pathname.split("/").pop();
+
+async function load() {
+  const res = await fetch(`/api/transcripts/${sessionId}`);
+  if (!res.ok) {
+    document.getElementById("content").innerHTML =
+      '<p class="error">Transcript not found.</p>';
+    return;
+  }
+  const d = await res.json();
+  render(d);
+}
+
+function meter(pct) {
+  return `<div class="meter"><div class="meter-fill" style="width:${pct}%"></div></div>`;
+}
+
+function render(d) {
+  const date = new Date(d.created_at + " UTC").toLocaleDateString(undefined, {
+    year: "numeric", month: "long", day: "numeric"
+  });
+
+  const pillarLabels = {
+    logical_reasoning: "Logical Reasoning",
+    organization: "Organization",
+    persuasiveness: "Persuasiveness",
+    clarity: "Clarity",
+  };
+
+  const pillarsHtml = Object.entries(pillarLabels).map(([key, label]) => {
+    const p = d.evaluation.overall_reasoning[key];
+    const pct = (p.score / 5) * 100;
+    return `
+      <div class="score-row">
+        <div class="score-head"><span class="label">${label}</span><span>${p.score}/5</span></div>
+        ${meter(pct)}
+        ${p.feedback ? `<div class="score-feedback">${p.feedback}</div>` : ""}
+      </div>`;
+  }).join("");
+
+  const rubricHtml = (d.evaluation.rubric_alignment || []).map(item => {
+    const pct = (item.points_awarded / item.max_points) * 100;
+    return `
+      <div class="rubric-item">
+        <div class="rubric-head"><span>${item.criterion}</span><span>${item.points_awarded}/${item.max_points}</span></div>
+        ${meter(pct)}
+        ${item.feedback ? `<div class="score-feedback">${item.feedback}</div>` : ""}
+      </div>`;
+  }).join("");
+
+  const exchangesHtml = d.exchanges.map((ex, i) => `
+    <div class="exchange">
+      <div class="exchange-label">Q${i + 1}</div>
+      <div class="exchange-q">${ex.question}</div>
+      <div class="exchange-label">A${i + 1}</div>
+      <div class="exchange-a">${ex.response}</div>
+    </div>`).join("");
+
+  const totalAwarded = (d.evaluation.rubric_alignment || [])
+    .reduce((s, r) => s + r.points_awarded, 0);
+  const totalMax = (d.evaluation.rubric_alignment || [])
+    .reduce((s, r) => s + r.max_points, 0);
+  const scoreLabel = totalMax ? `${totalAwarded}/${totalMax}` : "";
+
+  document.getElementById("content").innerHTML = `
+    <div class="page-header">
+      <h1>${d.topic || "Session Transcript"}</h1>
+      <div class="meta">${date}${scoreLabel ? " &nbsp;·&nbsp; Suggested score: <strong>" + scoreLabel + "</strong>" : ""}</div>
+    </div>
+
+    <section>
+      <h2>Overall Reasoning</h2>
+      <div class="score-grid">${pillarsHtml}</div>
+    </section>
+
+    ${rubricHtml ? `
+    <section>
+      <h2>Rubric</h2>
+      <div class="score-grid">${rubricHtml}</div>
+    </section>` : ""}
+
+    ${d.evaluation.groundedness_notes ? `
+    <section>
+      <h2>Groundedness</h2>
+      <p style="color:var(--muted);font-size:0.88rem;margin:0">${d.evaluation.groundedness_notes}</p>
+    </section>` : ""}
+
+    <section>
+      <h2>Argument</h2>
+      <div class="argument-text">${d.argument}</div>
+    </section>
+
+    <section>
+      <h2>Discussion</h2>
+      ${exchangesHtml}
+    </section>
+  `;
+}
+
+load();
+</script>
+</body>
+</html>
