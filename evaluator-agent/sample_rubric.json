@@ -1,10 +1,29 @@
 {
   "criteria": [
-    {"name": "Issue Spotting", "description": "Correctly identifies the legal/doctrinal question(s) actually raised by the case or hypothetical.", "points": 15},
-    {"name": "Rule Identification", "description": "States the controlling rule, standard, or test accurately, citing the source when applicable.", "points": 15},
-    {"name": "Rule Application", "description": "Applies the rule to the specific facts rather than restating it in the abstract.", "points": 25},
-    {"name": "Counterarguments", "description": "Anticipates and addresses the strongest opposing position.", "points": 20},
-    {"name": "Conclusion", "description": "Reaches a clear, supported conclusion rather than trailing off or hedging without resolution.", "points": 10},
-    {"name": "Organization", "description": "Presents the argument in a logical sequence a listener can follow without re-reading.", "points": 15}
+    {
+      "name": "Legal Issue Identification",
+      "description": "Accurately identifies the legal issue raised by the facts, including whether the question presented is stated clearly and precisely.",
+      "points": 20
+    },
+    {
+      "name": "Relevant Legal Rule",
+      "description": "Identifies the relevant statutes or cases and accurately presents the current state of the law.",
+      "points": 20
+    },
+    {
+      "name": "Rule Application to Facts",
+      "description": "Identifies and engages with the relevant facts and applies the rule appropriately to those facts.",
+      "points": 20
+    },
+    {
+      "name": "Clear Conclusion",
+      "description": "States a clear recommendation or decision that is appropriate in light of the relevant law and facts.",
+      "points": 20
+    },
+    {
+      "name": "Compelling, Well-Structured Argument",
+      "description": "Presents a logical structure that supports the thesis, engages with counter-arguments and acknowledges weaknesses, and offers creative or original analysis.",
+      "points": 20
+    }
   ]
 }
