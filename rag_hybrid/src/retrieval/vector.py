@@ -1,12 +1,15 @@
 import sqlite3
+import struct
 import sys
 from pathlib import Path
 
 _SRC = Path(__file__).resolve().parents[1]
 sys.path.append(str(_SRC))
-sys.path.append(str(_SRC / "ingestion"))
 
-from index import serialize_embedding
+
+def serialize_embedding(embedding: list[float]) -> bytes:
+    return struct.pack(f"{len(embedding)}f", *embedding)
+
 
 def vector_search(conn, query_embedding: list[float], top_k: int = 100):
     cursor = conn.cursor()
