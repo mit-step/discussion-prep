@@ -1,0 +1,10 @@
+{
+  "criteria": [
+    {"name": "Issue Spotting", "description": "Correctly identifies the legal/doctrinal question(s) actually raised by the case or hypothetical.", "points": 15},
+    {"name": "Rule Identification", "description": "States the controlling rule, standard, or test accurately, citing the source when applicable.", "points": 15},
+    {"name": "Rule Application", "description": "Applies the rule to the specific facts rather than restating it in the abstract.", "points": 25},
+    {"name": "Counterarguments", "description": "Anticipates and addresses the strongest opposing position.", "points": 20},
+    {"name": "Conclusion", "description": "Reaches a clear, supported conclusion rather than trailing off or hedging without resolution.", "points": 10},
+    {"name": "Organization", "description": "Presents the argument in a logical sequence a listener can follow without re-reading.", "points": 15}
+  ]
+}
