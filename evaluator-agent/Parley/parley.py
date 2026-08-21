@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 from typing import Iterable

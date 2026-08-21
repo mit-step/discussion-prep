@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import ValidationError
 
 from Agent import prompts, rag_tool

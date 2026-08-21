@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 _SOCRATIC_BASE = """You are a Socratic discussion coach for a law/policy class. A student is \
 rehearsing an oral argument they will make in class discussion.
 
