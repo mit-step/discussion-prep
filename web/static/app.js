@@ -113,7 +113,7 @@ function addLoadingBubble(label) {
 
 function addTranscriptLink(id) {
   const el = document.createElement("a");
-  el.href = `/transcript/${id}`;
+  el.href = `transcript/${id}`;
   el.target = "_blank";
   el.className = "bubble system transcript-link";
   el.textContent = "View full transcript →";
@@ -158,7 +158,7 @@ async function startNewSession() {
   inputEl.value = "";
   setBusy(true);
   try {
-    const data = await api("/api/session");
+    const data = await api("api/session");
     sessionId = data.session_id;
     phase = "awaiting_topic";
     roundsTotal = data.rounds_total;
@@ -277,7 +277,7 @@ async function send() {
 
   try {
     if (phase === "awaiting_topic") {
-      const data = await api(`/api/session/${sessionId}/topic`, {
+      const data = await api(`api/session/${sessionId}/topic`, {
         body: JSON.stringify({ topic_text: text }),
       });
       loading.stop();
@@ -288,7 +288,7 @@ async function send() {
       addBubble("ai", `Got it — I'll ground our discussion in ${docLabel}. Now go ahead and state your argument.`);
       inputEl.placeholder = "State your argument…";
     } else if (phase === "awaiting_argument") {
-      const data = await api(`/api/session/${sessionId}/argument`, {
+      const data = await api(`api/session/${sessionId}/argument`, {
         body: JSON.stringify({ argument_text: text }),
       });
       loading.stop();
@@ -298,7 +298,7 @@ async function send() {
       setRoundBadge(`Round ${data.round}/${data.rounds_total}`);
       addBubble("ai", data.question);
     } else if (phase === "in_round") {
-      const data = await api(`/api/session/${sessionId}/respond`, {
+      const data = await api(`api/session/${sessionId}/respond`, {
         body: JSON.stringify({ response_text: text }),
       });
       loading.stop();

@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Session Transcript</title>
+  <base href="/discussion-prep/" />
   <style>
     :root {
       color-scheme: light dark;
@@ -124,7 +125,7 @@
 const sessionId = window.location.pathname.split("/").pop();
 
 async function load() {
-  const res = await fetch(`/api/transcripts/${sessionId}`);
+  const res = await fetch(`api/transcripts/${sessionId}`);
   if (!res.ok) {
     document.getElementById("content").innerHTML =
       '<p class="error">Transcript not found.</p>';
