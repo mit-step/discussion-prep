@@ -404,29 +404,231 @@ button:disabled {
   margin: 0;
 }
 
-.search-box {
+.library-header-actions {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.55rem 0.9rem;
-  background: var(--card-bg);
 }
 
-.search-box input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  color: var(--fg);
-  font-family: inherit;
-  font-size: 0.95rem;
-  outline: none;
+/* --- Search box: collapses to a circle, expands to a pill on click/focus --- */
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+  background: var(--card-bg);
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width 0.18s ease, border-radius 0.18s ease, background-color 0.18s ease;
+}
+
+.search-box.expanded {
+  width: 220px;
+  border-radius: 10px;
+  justify-content: flex-start;
+  padding: 0 0.75rem;
+  background: #ffffff;
+  cursor: text;
 }
 
 .search-box .search-icon {
   color: var(--muted);
   flex-shrink: 0;
+}
+
+/* Icon stays legible against the forced-white expanded background in dark mode too */
+.search-box.expanded .search-icon {
+  color: #6b7280;
+}
+
+.search-box input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  opacity: 0;
+  border: none;
+  background: transparent;
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: opacity 0.12s ease;
+}
+
+.search-box.expanded input {
+  width: auto;
+  opacity: 1;
+}
+
+/* --- View toggle (grid / list), Finder-style --- */
+
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-toggle button {
+  background: var(--card-bg);
+  color: var(--muted);
+  border: none;
+  border-radius: 0;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.view-toggle button.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* --- Profile menu --- */
+
+.profile-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.4rem;
+  min-width: 160px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  z-index: 20;
+}
+
+.profile-dropdown-name {
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.2rem;
+}
+
+.profile-dropdown-logout {
+  background: transparent;
+  color: #ef4444;
+  border: none;
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.profile-dropdown-logout:hover {
+  background: var(--card-bg);
+}
+
+/* --- Reading list view (sortable, Finder-list-style) --- */
+
+.reading-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.reading-list-header,
+.reading-list-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 130px 110px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+}
+
+.reading-list-header {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.reading-list-header .reading-list-col {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.reading-list-row {
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  background: var(--bg);
+  font-size: 0.88rem;
+}
+
+.reading-list-row:last-child {
+  border-bottom: none;
+}
+
+.reading-list-row:hover {
+  background: var(--card-bg);
+}
+
+.reading-list-col-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reading-list-col-preview a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.reading-list-col-preview a:hover {
+  text-decoration: underline;
+}
+
+.sort-arrow {
+  font-size: 0.6rem;
 }
 
 .library-empty {

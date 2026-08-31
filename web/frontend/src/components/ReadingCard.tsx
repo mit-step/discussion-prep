@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { readingPdfUrl } from "../api/client";
 import type { Reading } from "../types";
+import { summarizeEvaluation } from "../utils/evaluationSummary";
 import { RadarChart, type RadarDatum } from "./RadarChart";
 
 const PILLAR_LABELS: Record<string, string> = {
@@ -19,26 +20,20 @@ export function ReadingCard({ reading }: { reading: Reading }) {
   }
 
   let overallData: RadarDatum[] = [];
-  let overallMean: number | null = null;
   let rubricData: RadarDatum[] = [];
-  let rubricMean: number | null = null;
+  const summary = evaluation ? summarizeEvaluation(evaluation) : null;
 
   if (evaluation) {
-    const pillars = Object.entries(PILLAR_LABELS).map(([key, label]) => ({
+    overallData = Object.entries(PILLAR_LABELS).map(([key, label]) => ({
       label,
-      score: evaluation.overall_reasoning[key as keyof typeof evaluation.overall_reasoning].score,
+      value: evaluation.overall_reasoning[key as keyof typeof evaluation.overall_reasoning].score / 5,
     }));
-    overallData = pillars.map((p) => ({ label: p.label, value: p.score / 5 }));
-    overallMean = pillars.reduce((sum, p) => sum + p.score, 0) / pillars.length;
 
     if (evaluation.rubric_alignment.length > 0) {
       rubricData = evaluation.rubric_alignment.map((item) => ({
         label: item.criterion.length > 14 ? `${item.criterion.slice(0, 13)}…` : item.criterion,
         value: item.points_awarded / item.max_points,
       }));
-      const totalAwarded = evaluation.rubric_alignment.reduce((s, i) => s + i.points_awarded, 0);
-      const totalMax = evaluation.rubric_alignment.reduce((s, i) => s + i.max_points, 0);
-      rubricMean = totalMax > 0 ? (totalAwarded / totalMax) * 100 : null;
     }
   }
 
@@ -51,13 +46,13 @@ export function ReadingCard({ reading }: { reading: Reading }) {
           <div className="reading-card-metric">
             <div className="reading-card-metric-label">Overall Reasoning</div>
             <RadarChart data={overallData} height={110} />
-            <div className="reading-card-metric-value">{overallMean?.toFixed(1)}/5</div>
+            <div className="reading-card-metric-value">{summary?.overallMean.toFixed(1)}/5</div>
           </div>
           {rubricData.length > 0 && (
             <div className="reading-card-metric">
               <div className="reading-card-metric-label">Rubric Alignment</div>
               <RadarChart data={rubricData} height={110} />
-              <div className="reading-card-metric-value">{rubricMean?.toFixed(0)}%</div>
+              <div className="reading-card-metric-value">{summary?.rubricPct?.toFixed(0)}%</div>
             </div>
           )}
         </div>
