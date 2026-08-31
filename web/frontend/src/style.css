@@ -422,8 +422,8 @@ button:disabled {
   align-items: center;
   gap: 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 34px;
+  border-radius: 999px;
+  width: 44px;
   height: 34px;
   padding: 0;
   justify-content: center;
@@ -431,7 +431,7 @@ button:disabled {
   cursor: pointer;
   overflow: hidden;
   flex-shrink: 0;
-  transition: width 0.18s ease, border-radius 0.18s ease, background-color 0.18s ease;
+  transition: width 0.18s ease, background-color 0.18s ease;
 }
 
 .search-box.expanded {
