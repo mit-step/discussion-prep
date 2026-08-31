@@ -7,9 +7,9 @@ import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 
 # Agent/, Schemas/, Parley/ are flat top-level packages under evaluator-agent/,
@@ -24,6 +24,10 @@ from Schemas.schemas import SocraticExchange, StudentArgument  # noqa: E402
 ROUNDS = 3
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 _DB_PATH = Path(__file__).resolve().parent.parent / "rag_hybrid" / "data" / "mvp.db"
+
+# Demo is hosted under this path prefix (matches the <base> tag in static/index.html
+# and static/transcript.html) rather than at the domain root.
+ROUTE_PREFIX = "/discussion-prep"
 
 
 # --- database helpers ---
@@ -81,6 +85,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+router = APIRouter(prefix=ROUTE_PREFIX)
 
 
 # --- session management ---
@@ -127,14 +132,14 @@ class ResponseIn(BaseModel):
 
 # --- session endpoints ---
 
-@app.post("/api/session")
+@router.post("/api/session")
 def create_session():
     session_id = str(uuid.uuid4())
     sessions[session_id] = Session()
     return {"session_id": session_id, "rounds_total": ROUNDS}
 
 
-@app.post("/api/session/{session_id}/topic")
+@router.post("/api/session/{session_id}/topic")
 def submit_topic(session_id: str, body: TopicIn):
     session = get_session(session_id)
     if session.status != "awaiting_topic":
@@ -147,7 +152,7 @@ def submit_topic(session_id: str, body: TopicIn):
     return {"source_docs": session.source_docs}
 
 
-@app.post("/api/session/{session_id}/argument")
+@router.post("/api/session/{session_id}/argument")
 def submit_argument(session_id: str, body: ArgumentIn):
     session = get_session(session_id)
     if session.status != "awaiting_argument":
@@ -160,7 +165,7 @@ def submit_argument(session_id: str, body: ArgumentIn):
     return {"round": session.round_num, "rounds_total": ROUNDS, "question": session.pending_question}
 
 
-@app.post("/api/session/{session_id}/respond")
+@router.post("/api/session/{session_id}/respond")
 def submit_response(session_id: str, body: ResponseIn):
     session = get_session(session_id)
     if session.status != "in_round":
@@ -185,7 +190,7 @@ def submit_response(session_id: str, body: ResponseIn):
 
 # --- transcript endpoints ---
 
-@app.get("/api/transcripts")
+@router.get("/api/transcripts")
 def list_transcripts():
     with _db_connect() as conn:
         rows = conn.execute(
@@ -202,7 +207,7 @@ def list_transcripts():
     ]
 
 
-@app.get("/api/transcripts/{session_id}")
+@router.get("/api/transcripts/{session_id}")
 def get_transcript(session_id: str):
     with _db_connect() as conn:
         row = conn.execute(
@@ -223,14 +228,22 @@ def get_transcript(session_id: str):
 
 # --- static files ---
 
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount(f"{ROUTE_PREFIX}/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
-@app.get("/transcript/{session_id}")
+@router.get("/transcript/{session_id}")
 def transcript_page(session_id: str):
     return FileResponse(str(STATIC_DIR / "transcript.html"))
 
 
-@app.get("/")
+@router.get("/")
 def index():
     return FileResponse(str(STATIC_DIR / "index.html"))
+
+
+app.include_router(router)
+
+
+@app.get("/")
+def root_redirect():
+    return RedirectResponse(url=f"{ROUTE_PREFIX}/")
