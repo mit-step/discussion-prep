@@ -23,7 +23,6 @@ import db  # noqa: E402
 import readings_search  # noqa: E402
 
 ROUNDS = 3
-STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 # Demo is hosted under this path prefix (matches the <base> tag in static/index.html
 # and static/transcript.html) rather than at the domain root.
@@ -205,13 +204,10 @@ def get_transcript(session_id: str, user_id: str = Depends(get_current_user_id))
 
 
 # --- static files ---
-# TODO(Pages-buildup): web/static/* is the pre-React vanilla-JS UI, kept only
-# until the Vite/React frontend (web/frontend/) is built and verified, per the
-# plan in ~/.claude/plans/here-s-my-plan-step-by-step-snoopy-naur.md. Its API
-# calls (the old /topic step, unscoped /api/transcripts) no longer match this
-# backend and are expected to be broken until the React rewrite replaces it.
+# The React SPA build (web/frontend/, `npm run build`). web/static/* (the old
+# vanilla-JS UI) is no longer served — this replaces it.
+FRONTEND_DIST = Path(__file__).resolve().parent / "frontend" / "dist"
 
-app.mount(f"{ROUTE_PREFIX}/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 # check_dir=False: rag_hybrid/resources/readings/ is populated by the one-time
 # PDF migration script and won't exist until that's been run.
 app.mount(
@@ -219,16 +215,27 @@ app.mount(
     StaticFiles(directory=str(db.READINGS_DIR), check_dir=False),
     name="readings-pdf",
 )
+app.mount(
+    f"{ROUTE_PREFIX}/assets",
+    StaticFiles(directory=str(FRONTEND_DIST / "assets"), check_dir=False),
+    name="frontend-assets",
+)
 
 
-@router.get("/transcript/{session_id}")
-def transcript_page(session_id: str):
-    return FileResponse(str(STATIC_DIR / "transcript.html"))
-
-
-@router.get("/")
-def index():
-    return FileResponse(str(STATIC_DIR / "index.html"))
+# SPA fallback — must be the LAST route registered on `router` so every
+# /api/... route above takes precedence. React Router owns everything else
+# under the prefix (/login, /library, /chat/:docUuid, /transcript/:id).
+@router.get("/{full_path:path}")
+def spa_fallback(full_path: str):
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404)
+    index_path = FRONTEND_DIST / "index.html"
+    if not index_path.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Frontend not built — run `npm run build` in web/frontend/",
+        )
+    return FileResponse(str(index_path))
 
 
 app.include_router(router)
