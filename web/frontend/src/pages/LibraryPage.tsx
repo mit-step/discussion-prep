@@ -61,9 +61,12 @@ export function LibraryPage() {
                 ☰
               </button>
             </div>
-            <SearchBox onQueryChange={setQuery} />
             <ProfileMenu />
           </div>
+        </div>
+
+        <div className="library-search-row">
+          <SearchBox onQueryChange={setQuery} />
         </div>
 
         {error && <div className="bubble system">Error: {error}</div>}

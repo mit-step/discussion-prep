@@ -410,6 +410,11 @@ button:disabled {
   gap: 0.6rem;
 }
 
+.library-search-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* --- Search box: collapses to a circle, expands to a pill on click/focus --- */
 
 .search-box {
