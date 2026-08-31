@@ -8,13 +8,23 @@ from Schemas.schemas import EvaluationOutput, StudentArgument
 
 
 class SocraticAgent:
-    def __init__(self, rubric_items: list[dict] | None = None, reading_text: str | None = None):
+    def __init__(
+        self,
+        rubric_items: list[dict] | None = None,
+        reading_text: str | None = None,
+        doc_uuid: str | None = None,
+    ):
         self.rubric_items = rubric_items
         self.reading_text = reading_text
+        self.doc_uuid = doc_uuid
 
     def ask_question(self, argument: StudentArgument, round_num: int = 1) -> str:
-        grounding = rag_tool.check_groundedness(argument.argument_text)
-        system_prompt = prompts.build_socratic_prompt(round_num, [row["content"] for row in grounding])
+        grounding = rag_tool.check_groundedness(argument.argument_text, primary_doc_uuid=self.doc_uuid)
+        system_prompt = prompts.build_socratic_prompt(
+            round_num,
+            [row["content"] for row in grounding["primary"]],
+            [row["content"] for row in grounding["other"]],
+        )
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": self._format_argument_state(argument)},
@@ -22,7 +32,7 @@ class SocraticAgent:
         return parleyChatCompletion(messages)
 
     def evaluate(self, argument: StudentArgument) -> EvaluationOutput:
-        grounding = rag_tool.check_groundedness(argument.argument_text)
+        grounding = rag_tool.check_groundedness(argument.argument_text, primary_doc_uuid=self.doc_uuid)
         system_prompt = prompts.build_evaluation_prompt(self.rubric_items)
         messages = [
             {"role": "system", "content": system_prompt},
@@ -50,11 +60,14 @@ class SocraticAgent:
             parts.append(f"Follow-up {i} - Q: {exchange.question}\nFollow-up {i} - A: {exchange.response}")
         return "\n\n".join(parts)
 
-    def _format_full_transcript(self, argument: StudentArgument, grounding: list[dict]) -> str:
+    def _format_full_transcript(self, argument: StudentArgument, grounding: dict[str, list[dict]]) -> str:
         parts = [self._format_argument_state(argument)]
-        if grounding:
-            snippets = "\n".join(f"- {row['content']}" for row in grounding)
-            parts.append(f"Retrieved source material:\n{snippets}")
+        if grounding["primary"]:
+            snippets = "\n".join(f"- {row['content']}" for row in grounding["primary"])
+            parts.append(f"Primary reading passages (the assigned discussion text):\n{snippets}")
+        if grounding["other"]:
+            snippets = "\n".join(f"- {row['content']}" for row in grounding["other"])
+            parts.append(f"Other course materials (for context/cross-reference only):\n{snippets}")
         return "\n\n".join(parts)
 
 

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 import sys
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
@@ -17,75 +16,61 @@ from pydantic import BaseModel
 _EVALUATOR_AGENT_PATH = Path(__file__).resolve().parent.parent / "evaluator-agent"
 sys.path.insert(0, str(_EVALUATOR_AGENT_PATH))
 
-from Agent.rag_tool import check_groundedness, extract_source_docs  # noqa: E402
 from Agent.socratic_agent import SocraticAgent  # noqa: E402
 from Schemas.schemas import SocraticExchange, StudentArgument  # noqa: E402
 
+import db  # noqa: E402
+import readings_search  # noqa: E402
+
 ROUNDS = 3
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-_DB_PATH = Path(__file__).resolve().parent.parent / "rag_hybrid" / "data" / "mvp.db"
 
 # Demo is hosted under this path prefix (matches the <base> tag in static/index.html
 # and static/transcript.html) rather than at the domain root.
 ROUTE_PREFIX = "/discussion-prep"
 
 
-# --- database helpers ---
-
-def _db_connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_DB_PATH))
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def _init_transcripts_table() -> None:
-    with _db_connect() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS transcripts (
-                session_id  TEXT PRIMARY KEY,
-                topic       TEXT,
-                source_docs TEXT,
-                argument    TEXT NOT NULL,
-                exchanges   TEXT NOT NULL,
-                evaluation  TEXT NOT NULL,
-                created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-
-def _save_transcript(session_id: str, session, evaluation: dict) -> None:
-    exchanges = [
-        {"question": ex.question, "response": ex.response}
-        for ex in session.argument.rounds
-    ]
-    with _db_connect() as conn:
-        conn.execute(
-            """
-            INSERT OR REPLACE INTO transcripts
-                (session_id, topic, source_docs, argument, exchanges, evaluation)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                session_id,
-                session.topic,
-                json.dumps(session.source_docs),
-                session.argument.argument_text,
-                json.dumps(exchanges),
-                json.dumps(evaluation),
-            ),
-        )
-
-
-# --- app lifespan ---
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    _init_transcripts_table()
+    db.init_app_db()
+    db.READINGS_DIR.mkdir(parents=True, exist_ok=True)
     yield
 
 
 app = FastAPI(lifespan=lifespan)
 router = APIRouter(prefix=ROUTE_PREFIX)
+
+
+# --- auth (demo placeholder — NOT real security) ---
+
+def get_current_user_id(x_user_id: str = Header(...)) -> str:
+    """DEMO ONLY — trusts a client-supplied header with zero verification;
+    anyone can spoof any user_id. Replace with real Touchstone-backed session
+    auth before any non-demo use."""
+    return x_user_id
+
+
+class LoginIn(BaseModel):
+    name: str
+    email: str
+
+
+@router.post("/api/auth/login")
+def login(body: LoginIn):
+    user = db.get_or_create_user(body.name, body.email)
+    return {"user_id": user["user_id"], "name": user["name"], "email": user["email"]}
+
+
+# --- readings catalog + search ---
+
+@router.get("/api/readings")
+def list_readings(user_id: str = Depends(get_current_user_id)):
+    return db.readings_with_evaluations(user_id)
+
+
+@router.get("/api/readings/search")
+def search_readings(q: str, user_id: str = Depends(get_current_user_id)):
+    return readings_search.search_readings(q, user_id)
 
 
 # --- session management ---
@@ -96,14 +81,15 @@ def load_rubric_items() -> list[dict]:
 
 
 class Session:
-    def __init__(self):
-        self.agent = SocraticAgent(rubric_items=load_rubric_items(), reading_text=None)
+    def __init__(self, doc_uuid: str, user_id: str, title: str):
+        self.doc_uuid = doc_uuid
+        self.user_id = user_id
+        self.title = title
+        self.agent = SocraticAgent(rubric_items=load_rubric_items(), reading_text=None, doc_uuid=doc_uuid)
         self.argument: StudentArgument | None = None
         self.round_num = 0
         self.pending_question: str | None = None
-        self.status = "awaiting_topic"
-        self.topic: str | None = None
-        self.source_docs: list[str] = []
+        self.status = "awaiting_argument"
 
 
 sessions: dict[str, Session] = {}
@@ -118,8 +104,8 @@ def get_session(session_id: str) -> Session:
 
 # --- request models ---
 
-class TopicIn(BaseModel):
-    topic_text: str
+class SessionIn(BaseModel):
+    doc_uuid: str
 
 
 class ArgumentIn(BaseModel):
@@ -133,23 +119,13 @@ class ResponseIn(BaseModel):
 # --- session endpoints ---
 
 @router.post("/api/session")
-def create_session():
+def create_session(body: SessionIn, user_id: str = Depends(get_current_user_id)):
+    reading = db.get_reading(body.doc_uuid)
+    if reading is None:
+        raise HTTPException(status_code=404, detail="Unknown doc_uuid")
     session_id = str(uuid.uuid4())
-    sessions[session_id] = Session()
-    return {"session_id": session_id, "rounds_total": ROUNDS}
-
-
-@router.post("/api/session/{session_id}/topic")
-def submit_topic(session_id: str, body: TopicIn):
-    session = get_session(session_id)
-    if session.status != "awaiting_topic":
-        raise HTTPException(status_code=400, detail=f"Session is in state '{session.status}', not awaiting a topic")
-
-    session.topic = body.topic_text
-    grounding = check_groundedness(body.topic_text)
-    session.source_docs = extract_source_docs(grounding)
-    session.status = "awaiting_argument"
-    return {"source_docs": session.source_docs}
+    sessions[session_id] = Session(doc_uuid=body.doc_uuid, user_id=user_id, title=reading["title"])
+    return {"session_id": session_id, "rounds_total": ROUNDS, "reading_title": reading["title"]}
 
 
 @router.post("/api/session/{session_id}/argument")
@@ -184,41 +160,43 @@ def submit_response(session_id: str, body: ResponseIn):
     session.pending_question = None
     result = session.agent.evaluate(session.argument)
     evaluation = result.model_dump()
-    _save_transcript(session_id, session, evaluation)
+    exchanges = [{"question": ex.question, "response": ex.response} for ex in session.argument.rounds]
+    db.save_transcript(
+        session_id=session_id,
+        user_id=session.user_id,
+        reading_id=session.doc_uuid,
+        argument=session.argument.argument_text,
+        exchanges=exchanges,
+        evaluation=evaluation,
+    )
     return {"completed": True, "evaluation": evaluation}
 
 
-# --- transcript endpoints ---
+# --- per-reading history ---
 
-@router.get("/api/transcripts")
-def list_transcripts():
-    with _db_connect() as conn:
-        rows = conn.execute(
-            "SELECT session_id, topic, source_docs, created_at FROM transcripts ORDER BY created_at DESC"
-        ).fetchall()
-    return [
-        {
-            "session_id": r["session_id"],
-            "topic": r["topic"],
-            "source_docs": json.loads(r["source_docs"] or "[]"),
-            "created_at": r["created_at"],
-        }
-        for r in rows
-    ]
+@router.get("/api/readings/{doc_uuid}/history")
+def reading_history(doc_uuid: str, user_id: str = Depends(get_current_user_id)):
+    history = []
+    for row in db.list_reading_history(user_id, doc_uuid):
+        evaluation = json.loads(row["evaluation"])
+        history.append({
+            "session_id": row["session_id"],
+            "created_at": row["created_at"],
+            **db.summarize_evaluation(evaluation),
+        })
+    return history
 
+
+# --- transcript detail (ownership-checked — never distinguishes "not found" from "not yours") ---
 
 @router.get("/api/transcripts/{session_id}")
-def get_transcript(session_id: str):
-    with _db_connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM transcripts WHERE session_id = ?", (session_id,)
-        ).fetchone()
+def get_transcript(session_id: str, user_id: str = Depends(get_current_user_id)):
+    row = db.get_transcript(session_id, user_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Transcript not found")
     return {
         "session_id": row["session_id"],
-        "topic": row["topic"],
-        "source_docs": json.loads(row["source_docs"] or "[]"),
+        "reading_id": row["reading_id"],
         "argument": row["argument"],
         "exchanges": json.loads(row["exchanges"]),
         "evaluation": json.loads(row["evaluation"]),
@@ -227,8 +205,20 @@ def get_transcript(session_id: str):
 
 
 # --- static files ---
+# TODO(Pages-buildup): web/static/* is the pre-React vanilla-JS UI, kept only
+# until the Vite/React frontend (web/frontend/) is built and verified, per the
+# plan in ~/.claude/plans/here-s-my-plan-step-by-step-snoopy-naur.md. Its API
+# calls (the old /topic step, unscoped /api/transcripts) no longer match this
+# backend and are expected to be broken until the React rewrite replaces it.
 
 app.mount(f"{ROUTE_PREFIX}/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+# check_dir=False: rag_hybrid/resources/readings/ is populated by the one-time
+# PDF migration script and won't exist until that's been run.
+app.mount(
+    f"{ROUTE_PREFIX}/readings-pdf",
+    StaticFiles(directory=str(db.READINGS_DIR), check_dir=False),
+    name="readings-pdf",
+)
 
 
 @router.get("/transcript/{session_id}")

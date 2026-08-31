@@ -6,7 +6,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from lexical import bm25_search
 from vector import vector_search
-from config import DATABASE_PATH
+from config import DATABASE_PATH, RRF_SMOOTHING, RRF_WEIGHT_LEXICAL, RRF_WEIGHT_VECTOR
 
 import sqlite_vec
 
@@ -18,9 +18,9 @@ def connect(db_path):
     conn.enable_load_extension(False)
     return conn
 
-def weighted_rrf(vector_res, lexical_res, top_k=10, smoothing_param=60, weights=None):
+def weighted_rrf(vector_res, lexical_res, top_k=10, smoothing_param=RRF_SMOOTHING, weights=None):
     if weights is None:
-        weights = {'rank_v': 0.7, 'rank_l': 1.0}
+        weights = {'rank_v': RRF_WEIGHT_VECTOR, 'rank_l': RRF_WEIGHT_LEXICAL}
 
     lexical_ranks = {row['id']: rank for rank, row in enumerate(lexical_res, start=1)}
     vector_ranks = {row['id']: rank for rank, row in enumerate(vector_res, start=1)}
@@ -39,10 +39,10 @@ def weighted_rrf(vector_res, lexical_res, top_k=10, smoothing_param=60, weights=
 
     return sorted(scores, key=lambda t: t[1], reverse=True)[:top_k]
 
-def hybrid_search(db_path, query_text, query_embedding, smoothing_param=60, top_k=5):
+def hybrid_search(db_path, query_text, query_embedding, smoothing_param=RRF_SMOOTHING, top_k=5, doc_uuid=None):
     conn = connect(db_path)
-    vector_results = vector_search(conn, query_embedding, top_k=top_k)
-    lexical_results = bm25_search(query_text, db_path, top_k=top_k)
+    vector_results = vector_search(conn, query_embedding, top_k=top_k, doc_uuid=doc_uuid)
+    lexical_results = bm25_search(query_text, db_path, top_k=top_k, doc_uuid=doc_uuid)
     conn.close()
     rrf_scores = weighted_rrf(vector_results, lexical_results, top_k=top_k, smoothing_param=smoothing_param)
     return rrf_scores

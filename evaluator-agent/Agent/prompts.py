@@ -22,7 +22,10 @@ and identify any implicit thesis/evidence split yourself; do not ask the student
 
 If relevant source material is provided below, you may use it to shape a sharper question (e.g. "you \
 said X — walk me through why that applies here"), but do not state whether the student's claim is \
-right or wrong, and do not quote or summarize the source's holding for them.
+right or wrong, and do not quote or summarize the source's holding for them. Ground the discussion \
+primarily in the assigned reading's passages, but you may also draw on the other course materials \
+provided to surface a contradiction, a related case the student hasn't considered, or a gap in their \
+argument — the way a real discussion partner would, not a closed-book quiz on one document alone.
 
 Respond with exactly one question, preceded by at most one sentence of acknowledgment. \
 No preamble, no meta-commentary, no numbering."""
@@ -81,12 +84,19 @@ NO_RUBRIC_SECTION = (
 )
 
 
-def build_socratic_prompt(round_num: int, grounding_snippets: list[str]) -> str:
+def build_socratic_prompt(round_num: int, primary_snippets: list[str], other_snippets: list[str]) -> str:
     focus = _PHASE_FOCUS.get(round_num, _PHASE_FOCUS[3])
     prompt = f"{_SOCRATIC_BASE}\n\n{focus}"
-    if grounding_snippets:
-        joined = "\n".join(f"- {snippet}" for snippet in grounding_snippets)
-        prompt = f"{prompt}\n\nRelevant source material:\n{joined}"
+    if primary_snippets:
+        joined = "\n".join(f"- {snippet}" for snippet in primary_snippets)
+        prompt = f"{prompt}\n\nPrimary reading passages (the assigned discussion text):\n{joined}"
+    if other_snippets:
+        joined = "\n".join(f"- {snippet}" for snippet in other_snippets)
+        prompt = (
+            f"{prompt}\n\nOther course materials (for context/cross-reference only — use these to "
+            "point out contradictions, related doctrine, or gaps in the student's argument, but keep "
+            f"the discussion anchored to the primary reading):\n{joined}"
+        )
     return prompt
 
 

@@ -1,4 +1,3 @@
-import json
 import sys
 from pathlib import Path
 
@@ -11,26 +10,44 @@ sys.path.insert(0, str(_RAG_HYBRID_ROOT / "src"))
 
 from search import hybrid_search  # noqa: E402
 from embed import generate_embedding  # noqa: E402
+from config import (  # noqa: E402
+    GROUNDING_MAX_OTHER,
+    GROUNDING_TOP_K_OTHER,
+    GROUNDING_TOP_K_PRIMARY,
+)
 
 
-def check_groundedness(claim_text: str, top_k: int = 3) -> list[dict]:
+def _rows_to_dicts(results: list) -> list[dict]:
+    return [
+        {"content": row["content"], "metadata": row["metadata"], "doc_uuid": row["doc_uuid"]}
+        for row, _ in results
+    ]
+
+
+def check_groundedness(
+    claim_text: str,
+    primary_doc_uuid: str | None = None,
+    top_k_primary: int = GROUNDING_TOP_K_PRIMARY,
+    top_k_other: int = GROUNDING_TOP_K_OTHER,
+    max_other: int = GROUNDING_MAX_OTHER,
+) -> dict[str, list[dict]]:
+    """Two-tier grounding: `primary` is scoped to the assigned reading (if any),
+    `other` is a small cross-corpus pool (excluding the primary reading) so the
+    agent can still reference/dispute using other course materials like a real
+    discussion partner, while staying anchored to the assigned reading."""
     if not _DB_PATH.exists():
-        return []
+        return {"primary": [], "other": []}
+
     query_embedding = generate_embedding(claim_text)
-    results = hybrid_search(str(_DB_PATH), claim_text, query_embedding, top_k=top_k)
-    return [{"content": row["content"], "metadata": row["metadata"]} for row, _ in results]
 
+    primary = []
+    if primary_doc_uuid:
+        primary_results = hybrid_search(
+            str(_DB_PATH), claim_text, query_embedding, top_k=top_k_primary, doc_uuid=primary_doc_uuid
+        )
+        primary = _rows_to_dicts(primary_results)
 
-def extract_source_docs(grounding: list[dict]) -> list[str]:
-    seen: set[str] = set()
-    names: list[str] = []
-    for row in grounding:
-        try:
-            meta = json.loads(row["metadata"]) if row["metadata"] else {}
-            fname = meta.get("filename")
-            if fname and fname not in seen:
-                names.append(fname)
-                seen.add(fname)
-        except (json.JSONDecodeError, TypeError):
-            pass
-    return names
+    pool_results = hybrid_search(str(_DB_PATH), claim_text, query_embedding, top_k=top_k_other, doc_uuid=None)
+    other = [d for d in _rows_to_dicts(pool_results) if d["doc_uuid"] != primary_doc_uuid][:max_other]
+
+    return {"primary": primary, "other": other}
