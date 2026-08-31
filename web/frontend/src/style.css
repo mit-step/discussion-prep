@@ -415,18 +415,19 @@ button:disabled {
   justify-content: flex-end;
 }
 
-/* --- Search box: collapses to a circle, expands to a pill on click/focus --- */
+/* --- Search box: same rounded-rect shape throughout, just elongates and
+   reveals its placeholder text on click/focus --- */
 
 .search-box {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  width: 44px;
+  border-radius: 10px;
+  width: 110px;
   height: 34px;
-  padding: 0;
-  justify-content: center;
+  padding: 0 0.75rem;
+  justify-content: flex-start;
   background: var(--card-bg);
   cursor: pointer;
   overflow: hidden;
@@ -436,9 +437,6 @@ button:disabled {
 
 .search-box.expanded {
   width: 220px;
-  border-radius: 10px;
-  justify-content: flex-start;
-  padding: 0 0.75rem;
   background: #ffffff;
   cursor: text;
 }
