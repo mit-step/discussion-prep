@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import Avatar from "../assets/Avatar.png";
 import { ChatBubble, type BubbleRole } from "../components/ChatBubble";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HistoryPanel } from "../components/HistoryPanel";
 import { LoadingBubble } from "../components/LoadingBubble";
 import { MicButton } from "../components/MicButton";
@@ -31,7 +32,18 @@ export function ChatPage() {
   const [busy, setBusy] = useState(true);
   const [loadingLabel, setLoadingLabel] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+
+  const isUnfinished = phase === "awaiting_argument" || phase === "in_round";
+
+  function goToLibrary() {
+    if (isUnfinished) {
+      setShowLeaveConfirm(true);
+    } else {
+      navigate("/library");
+    }
+  }
 
   useEffect(() => {
     if (!docUuid) return;
@@ -122,7 +134,7 @@ export function ChatPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <header className="app-header">
-        <button type="button" className="secondary" onClick={() => navigate("/library")}>
+        <button type="button" className="secondary" onClick={goToLibrary}>
           ← Library
         </button>
         <h1>{initialTitle ?? "Discussion Prep"}</h1>
@@ -184,7 +196,7 @@ export function ChatPage() {
           }}
         />
         <div className="composer-actions">
-          <button type="button" className="secondary" onClick={() => navigate("/library")}>
+          <button type="button" className="secondary" onClick={goToLibrary}>
             Back to Library
           </button>
           <div className="composer-actions-right">
@@ -197,6 +209,19 @@ export function ChatPage() {
       </footer>
 
       {showHistory && docUuid && <HistoryPanel docUuid={docUuid} onClose={() => setShowHistory(false)} />}
+
+      {showLeaveConfirm && (
+        <ConfirmDialog
+          title="Leave this discussion?"
+          message="You haven't finished this session yet — going back to the library now will abandon this conversation and it won't be saved."
+          confirmLabel="Abandon & leave"
+          onCancel={() => setShowLeaveConfirm(false)}
+          onConfirm={() => {
+            setShowLeaveConfirm(false);
+            navigate("/library");
+          }}
+        />
+      )}
     </div>
   );
 }
