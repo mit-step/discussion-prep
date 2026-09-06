@@ -8,7 +8,7 @@ from pydantic import ValidationError
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "evaluator-agent" / "Parley"))
 
-from parley import parleyChatCompletion, parleyStructured 
+from parley import parleyChatCompletion 
 
 from schema_models import WarrantList  
 
