@@ -16,13 +16,21 @@ from db import get_conn, apply_schema
 from warrant import extract_warrants
 
 def pending_chunks(conn, doc_uuid=None, limit=None):
+    SKIP_FILES = (
+        "Devillier v Texas (2024) cropped.pdf",
+        "Mass v EPA 2007 549_U.S._497 Excerpts.pdf",
+        "Land Use Law and Envtl Law Syllabus 2022.pdf",
+    )
     sql = """
         SELECT m.chunk_uuid, m.doc_uuid, m.content
         FROM embeddings_meta m
         LEFT JOIN reading_warrant w ON w.chunk_uuid = m.chunk_uuid
         WHERE w.chunk_uuid IS NULL
     """
+    sql += " AND json_extract(m.metadata, '$.filename') NOT IN (?, ?, ?)"
     params = []
+    params.extend(SKIP_FILES)
+   
     if doc_uuid:
         sql += " AND m.doc_uuid = ?"
         params.append(doc_uuid)
@@ -92,4 +100,4 @@ def run(doc_uuid=None, limit=None):
 if __name__ == "__main__":
     doc = 'efb97db0-43ef-4e21-847f-812ad27ebad2'
     # lim = 20
-    run(doc)
+    run()
