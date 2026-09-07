@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
-import Avatar from "../assets/Avatar.png";
 import { ChatBubble, type BubbleRole } from "../components/ChatBubble";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HistoryPanel } from "../components/HistoryPanel";
@@ -129,8 +128,6 @@ export function ChatPage() {
     }
   }
 
-  const thinking = loadingLabel !== null;
-
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <header className="app-header">
@@ -156,10 +153,6 @@ export function ChatPage() {
           )}
         </div>
       </header>
-
-      <div className="avatar-section">
-        <img src={Avatar} className={`avatar-circle${thinking ? " thinking" : ""}`} alt="Discussion Coach" />
-      </div>
 
       <main className="chat" ref={chatRef}>
         {messages.map((msg, i) => {
@@ -196,9 +189,6 @@ export function ChatPage() {
           }}
         />
         <div className="composer-actions">
-          <button type="button" className="secondary" onClick={goToLibrary}>
-            Back to Library
-          </button>
           <div className="composer-actions-right">
             <MicButton currentValue={input} onChange={setInput} disabled={busy || phase === "completed"} />
             <button type="button" onClick={send} disabled={busy || phase === "completed" || !input.trim()}>

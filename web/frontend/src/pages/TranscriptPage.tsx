@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { ReportCard } from "../components/ReportCard";
 import type { TranscriptDetail } from "../types";
@@ -10,6 +10,7 @@ function formatDate(createdAt: string): string {
 
 export function TranscriptPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
+  const navigate = useNavigate();
   const [transcript, setTranscript] = useState<TranscriptDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +45,15 @@ export function TranscriptPage() {
           <h1>Session Transcript</h1>
           <div className="transcript-meta">{formatDate(transcript.created_at)}</div>
         </div>
+
+        <button
+          type="button"
+          className="secondary"
+          style={{ alignSelf: "flex-start" }}
+          onClick={() => navigate("/library")}
+        >
+          ← Back to Library
+        </button>
 
         <ReportCard evaluation={transcript.evaluation} />
 
