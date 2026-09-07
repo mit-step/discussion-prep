@@ -6,24 +6,34 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from config import DATABASE_PATH
 
+import re
+
+_FTS_STRIP = re.compile(r"[^\w\s]")
+
+# FTS5 MATCH parses its argument as a query expression, so punctuation in
+# free text (case citations, quotes, apostrophes) is a syntax error. Callers
+# pass raw student text and article prose, so strip it here rather than at
+# every call site.
+_STOP = {"a", "an", "the", "that", "is", "as", "of", "to", "in", "if",
+         "and", "or", "it", "its", "for", "by", "on", "when", "does", "not"}
+
+
+def _fts_query(text):
+    terms = _FTS_STRIP.sub(" ", text).split()
+    terms = [t for t in terms if t.lower() not in _STOP and len(t) > 2]
+    return " OR ".join(terms)
+
 
 
 def bm25_search(query, db_path, top_k=5, doc_uuid=None):
+    query = _fts_query(query)
+    if not query:
+        return []
+
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    """
-    CREATE TABLE IF NOT EXISTS embeddings_meta (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chunk_uuid TEXT NOT NULL UNIQUE,
-            doc_uuid TEXT NOT NULL,
-            source_type TEXT NOT NULL,
-            content TEXT NOT NULL,
-            metadata TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """
     sql = """
         SELECT m.id, m.chunk_uuid, m.doc_uuid, m.source_type, m.content, m.metadata,
                bm25(embeddings_fts) AS score
