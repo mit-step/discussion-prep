@@ -56,3 +56,39 @@ class WarrantList(BaseModel):
     warrants: list[Warrant] = Field(
         description="Empty when the passage contains no rule."
     )
+
+class Stance(str, Enum):
+    """What the student is doing with the rule their argument rests on."""
+
+    asserts = "asserts"  # relying on it: their conclusion follows from it
+    rejects = "rejects"  # arguing against it
+
+
+class TurnStructure(BaseModel):
+    has_argument: bool = Field(
+        description="False for a question, a clarification, agreement, or small talk."
+    )
+    claim: str = Field(description="The position the student is defending.")
+    premises: list[str] = Field(
+        description="Reasons the student actually stated. Do not add reasons they did not give."
+    )
+    warrant_text: str = Field(
+        description=(
+            "The unstated general rule that licenses moving from the premises to the "
+            "claim. One sentence, stated affirmatively as something a court could "
+            "adopt. NO case names, party names, statutes, places or dates, even if "
+            "the student used them."
+        )
+    )
+    stance: Stance = Field(
+        description=(
+            "Whether the student is relying on the warrant or arguing against it. "
+            "State the warrant affirmatively either way: if the student argues that "
+            "public benefit is NOT enough for public use, the warrant is still "
+            "'a taking producing public benefit qualifies as public use' and the "
+            "stance is 'rejects'."
+        )
+    )
+    invoked_sources: list[str] = Field(
+        description="Readings or cases the student named. Empty if none."
+    )
