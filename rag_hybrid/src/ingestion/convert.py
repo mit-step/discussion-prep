@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from docling.document_converter import DocumentConverter
 from docling_core.types.io import DocumentStream
 from io import BytesIO
