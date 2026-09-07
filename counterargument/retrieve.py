@@ -2,6 +2,7 @@ import re
 import sqlite3
 import sys
 from pathlib import Path
+import struct
 
 import sqlite_vec
 
@@ -74,19 +75,31 @@ def weighted_rrf(vector_res, lexical_res, smoothing_param=60, weights=None):
             s += weights["rank_l"] / (smoothing_param + l_ranks[wid])
         scores[wid] = s
     return scores
+    
+# What the student is doing with the rule decides what counts as a
+# counterargument. A passage that refused the rule only challenges a student
+# who is relying on it. For a student arguing against the rule, the challenge
+# is a passage that applied it successfully.
+OPPOSES = {
+    "asserts": ("refused", "distinguished"),
+    "rejects": ("applied",),
+}
 
-
-def find_parallel(conn, warrant_text, k_candidates=40, k_final=5,
-                  reactions=("refused", "distinguished"),
-                  exclude_chunk_ids=None, mode="hybrid", weights=None):
+def find_parallel(conn, warrant_text, stance="asserts", k_candidates=60,
+                  k_final=5, exclude_chunk_ids=None, mode="hybrid",
+                  weights=None, one_per_doc=True, reactions=None):
     """
-    mode: 'hybrid', 'dense', or 'lexical'. Run all three on one query to see
-    whether fusion earns its place on this corpus.
+    stance: 'asserts' or 'rejects', from the student extraction.
 
-    k_candidates wide, k_final narrow on purpose: RRF has nothing to do when
-    both lists are the same length as the output.
+    Retrieval finds warrants about the same rule. The reaction filter is what
+    makes them counterarguments rather than merely relevant, and it can only
+    do that if it knows which side the student is on. Filtering on 'refused'
+    alone returns passages that agree with a student who is themselves
+    rejecting the rule.
     """
     exclude_chunk_ids = set(exclude_chunk_ids or [])
+    if reactions is None:
+        reactions = OPPOSES.get(stance, ("refused", "distinguished"))
 
     lexical = warrant_bm25(conn, warrant_text, k_candidates) if mode in ("hybrid", "lexical") else []
     vector = []
@@ -112,10 +125,22 @@ def find_parallel(conn, warrant_text, k_candidates=40, k_final=5,
         d = dict(r)
         if d["chunk_uuid"] in exclude_chunk_ids:
             continue
-        if reactions and d["reaction"] not in reactions:
+        if d["reaction"] not in reactions:
             continue
         d["score"] = scores[d["warrant_id"]]
         out.append(d)
 
     out.sort(key=lambda d: d["score"], reverse=True)
+
+    if one_per_doc:
+        seen, kept = set(), []
+        for d in out:
+            if d["doc_uuid"] in seen:
+                continue
+            seen.add(d["doc_uuid"])
+            kept.append(d)
+        out = kept
+
     return out[:k_final]
+
+
