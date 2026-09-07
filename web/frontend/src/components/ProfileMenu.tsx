@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "../context/UserContext";
-import { avatarColorFor } from "../utils/avatarColor";
 
 export function ProfileMenu() {
   const { user, logout } = useUser();
@@ -23,7 +22,6 @@ export function ProfileMenu() {
       <button
         type="button"
         className="avatar-badge"
-        style={{ background: avatarColorFor(user.email) }}
         onClick={() => setOpen((o) => !o)}
         title={user.name}
       >

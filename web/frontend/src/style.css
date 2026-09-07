@@ -1,27 +1,29 @@
 :root {
   color-scheme: light dark;
-  --bg: #ffffff;
-  --fg: #1a1a1a;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --ai-bubble: #f3f4f6;
-  --student-bubble: #2563eb;
-  --student-fg: #ffffff;
-  --accent: #2563eb;
-  --card-bg: #f9fafb;
+  /* Palette: Ghost White (bg), Coffee Bean (ink), Vivid Royal + Glaucous
+     (supporting), Scarlet Fire (the one accent). */
+  --bg: #fbfbff;
+  --fg: #0d0106;
+  --muted: rgba(13, 1, 6, 0.55);
+  --border: #e1e4f5;
+  --ai-bubble: #eef0fc;
+  --student-bubble: #3626a7;
+  --student-fg: #fbfbff;
+  --accent: #ff331f;
+  --card-bg: #f1f2fa;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111827;
-    --fg: #f3f4f6;
-    --muted: #9ca3af;
-    --border: #374151;
-    --ai-bubble: #1f2937;
-    --student-bubble: #3b82f6;
-    --student-fg: #ffffff;
-    --accent: #60a5fa;
-    --card-bg: #1f2937;
+    --bg: #0d0106;
+    --fg: #fbfbff;
+    --muted: rgba(251, 251, 255, 0.6);
+    --border: #241a3c;
+    --ai-bubble: #170f2a;
+    --student-bubble: #657ed4;
+    --student-fg: #fbfbff;
+    --accent: #ff331f;
+    --card-bg: #180c26;
   }
 }
 
@@ -180,15 +182,15 @@ a.bubble.transcript-link:hover {
 }
 
 .mic-btn.recording {
-  background: #ef4444;
-  color: #ffffff;
-  border-color: #ef4444;
+  background: var(--accent);
+  color: #fbfbff;
+  border-color: var(--accent);
   animation: mic-pulse 1.2s ease-in-out infinite;
 }
 
 @keyframes mic-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
-  50% { box-shadow: 0 0 0 9px rgba(239, 68, 68, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 51, 31, 0.45); }
+  50% { box-shadow: 0 0 0 9px rgba(255, 51, 31, 0); }
 }
 
 button {
@@ -199,13 +201,27 @@ button {
   border: none;
   cursor: pointer;
   background: var(--accent);
-  color: #ffffff;
+  color: #fbfbff;
 }
 
 button.secondary {
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--border);
+}
+
+.knowledge-graph-link {
+  display: inline-flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 button:disabled {
@@ -402,7 +418,7 @@ button:disabled {
 
 .search-box.expanded {
   width: 220px;
-  background: #ffffff;
+  background: #fbfbff;
   cursor: text;
 }
 
@@ -411,9 +427,9 @@ button:disabled {
   flex-shrink: 0;
 }
 
-/* Icon stays legible against the forced-white expanded background in dark mode too */
+/* Icon stays legible against the forced-ghost-white expanded background in dark mode too */
 .search-box.expanded .search-icon {
-  color: #6b7280;
+  color: rgba(13, 1, 6, 0.55);
 }
 
 .search-box input {
@@ -423,7 +439,7 @@ button:disabled {
   opacity: 0;
   border: none;
   background: transparent;
-  color: #1a1a1a;
+  color: #0d0106;
   font-family: inherit;
   font-size: 0.9rem;
   outline: none;
@@ -457,7 +473,7 @@ button:disabled {
 
 .view-toggle button.active {
   background: var(--accent);
-  color: #ffffff;
+  color: #fbfbff;
 }
 
 /* --- Profile menu --- */
@@ -472,7 +488,8 @@ button:disabled {
   height: 34px;
   border-radius: 50%;
   border: none;
-  color: #ffffff;
+  background: #657ed4;
+  color: #fbfbff;
   font-weight: 600;
   font-size: 0.9rem;
   display: flex;
@@ -508,7 +525,7 @@ button:disabled {
 
 .profile-dropdown-logout {
   background: transparent;
-  color: #ef4444;
+  color: var(--accent);
   border: none;
   text-align: left;
   padding: 0.4rem 0.5rem;
@@ -799,8 +816,8 @@ button:disabled {
 }
 
 button.danger {
-  background: #ef4444;
-  color: #ffffff;
+  background: var(--accent);
+  color: #fbfbff;
 }
 
 /* --- Transcript page --- */
@@ -839,7 +856,7 @@ button.danger {
 
 .exchange-a {
   background: var(--accent);
-  color: #ffffff;
+  color: #fbfbff;
   border-radius: 10px;
   padding: 0.75rem 1rem;
   line-height: 1.5;

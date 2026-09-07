@@ -1,6 +1,6 @@
 import type { Evaluation, HistoryEntry, Reading, RespondResult, TranscriptDetail } from "../types";
 
-const BASE = "/discussion-prep";
+export const BASE = "/discussion-prep";
 const USER_ID_KEY = "discussion-prep:user_id";
 
 export function getStoredUserId(): string | null {

@@ -24,6 +24,8 @@ import readings_search  # noqa: E402
 
 ROUNDS = 3
 
+KNOWLEDGE_GRAPH_PATH = Path(__file__).resolve().parent.parent / "knowledge_graph" / "graph.html"
+
 # Demo is hosted under this path prefix (matches the <base> tag in static/index.html
 # and static/transcript.html) rather than at the domain root.
 ROUTE_PREFIX = "/discussion-prep"
@@ -70,6 +72,19 @@ def list_readings(user_id: str = Depends(get_current_user_id)):
 @router.get("/api/readings/search")
 def search_readings(q: str, user_id: str = Depends(get_current_user_id)):
     return readings_search.search_readings(q, user_id)
+
+
+# --- knowledge graph (citation map across the corpus, built offline by
+# knowledge_graph/build_graph.py) ---
+
+@router.get("/api/knowledge-graph")
+def get_knowledge_graph():
+    if not KNOWLEDGE_GRAPH_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Knowledge graph not built — run knowledge_graph/build_graph.py",
+        )
+    return FileResponse(str(KNOWLEDGE_GRAPH_PATH))
 
 
 # --- session management ---

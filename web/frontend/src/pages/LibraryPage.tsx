@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { api, BASE } from "../api/client";
 import { ProfileMenu } from "../components/ProfileMenu";
 import { ReadingCard } from "../components/ReadingCard";
 import { ReadingListView } from "../components/ReadingListView";
@@ -61,6 +61,14 @@ export function LibraryPage() {
                 ☰
               </button>
             </div>
+            <a
+              className="knowledge-graph-link"
+              href={`${BASE}/api/knowledge-graph`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Knowledge Graph
+            </a>
             <ProfileMenu />
           </div>
         </div>
