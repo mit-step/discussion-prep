@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Citation map — Land Use and Environmental Law</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  :root {
+    --field:     #DDE1E6;
+    --field-dim: #C9CFD6;
+    --ink:       #132A44;
+    --ink-soft:  #4A6076;
+    --brass:     #8A6D1B;
+    --flag:      #A6302A;
+    --edge:      #8FA0B0;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; height: 100%;
+    background: var(--field);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    overflow: hidden;
+  }
+
+  header {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+    display: flex; align-items: baseline; gap: 2rem;
+    padding: 1.1rem 1.5rem;
+    pointer-events: none;
+  }
+  h1 {
+    font-family: Spectral, Georgia, serif;
+    font-weight: 600; font-size: 1.35rem; letter-spacing: -0.01em;
+    margin: 0; line-height: 1;
+  }
+  .sub {
+    font-size: .8rem; color: var(--ink-soft); margin: 0;
+    max-width: 34ch; line-height: 1.45;
+  }
+
+  .legend {
+    position: absolute; bottom: 1.25rem; left: 1.5rem; z-index: 3;
+    display: flex; flex-direction: column; gap: .45rem;
+    font-size: .78rem;
+  }
+  .legend button {
+    display: flex; align-items: center; gap: .55rem;
+    background: none; border: 0; padding: .15rem 0;
+    font: inherit; color: var(--ink); cursor: pointer;
+    opacity: 1; transition: opacity .15s;
+  }
+  .legend button[aria-pressed="false"] { opacity: .35; }
+  .legend hr {
+    border: 0; border-top: 1px solid var(--ink-soft);
+    margin: .5rem 0 .1rem; opacity: .4;
+  }
+  .legend .edge-key {
+    display: flex; align-items: center; gap: .55rem;
+    color: var(--ink-soft); padding: .15rem 0;
+  }
+  .legend button:focus-visible { outline: 2px solid var(--flag); outline-offset: 3px; }
+  .legend svg { flex: none; }
+
+  #canvas { position: absolute; inset: 0; }
+
+  .views {
+    position: absolute; top: 1.1rem; right: 1.5rem; z-index: 5;
+    display: flex; border: 1px solid var(--ink);
+  }
+  .views button {
+    background: none; border: 0; padding: .4rem .9rem;
+    font: inherit; font-size: .78rem; color: var(--ink); cursor: pointer;
+  }
+  .views button + button { border-left: 1px solid var(--ink); }
+  .views button[aria-selected="true"] { background: var(--ink); color: var(--field); }
+  .views button:focus-visible { outline: 2px solid var(--flag); outline-offset: 2px; }
+
+  .count {
+    position: absolute; top: 3.4rem; right: 1.5rem; z-index: 5;
+    font-size: .72rem; color: var(--ink-soft);
+    font-variant-numeric: tabular-nums; text-align: right;
+    max-width: 22rem; line-height: 1.45;
+  }
+
+  #hover {
+    position: absolute; z-index: 6; pointer-events: none;
+    max-width: 21rem; padding: .6rem .75rem;
+    background: var(--ink); color: var(--field);
+    opacity: 0; transition: opacity .1s;
+  }
+  #hover.on { opacity: 1; }
+  #hover .h-t {
+    font-family: Spectral, Georgia, serif; font-size: .95rem;
+    line-height: 1.25; margin-bottom: .2rem;
+  }
+  #hover .h-m {
+    font-size: .72rem; opacity: .72;
+    font-variant-numeric: tabular-nums;
+  }
+  #hover .h-l { font-size: .74rem; margin-top: .45rem; line-height: 1.5; opacity: .9; }
+
+  .link { stroke: var(--edge); fill: none; }
+  .node { cursor: pointer; }
+  .label {
+    font-size: 9.5px; fill: var(--ink-soft);
+    pointer-events: none; paint-order: stroke;
+    stroke: var(--field); stroke-width: 3px; stroke-linejoin: round;
+  }
+  .faded { opacity: .07; }
+  .lit .link { stroke: var(--flag); }
+
+  aside {
+    position: absolute; top: 0; right: 0; bottom: 0; z-index: 4;
+    width: min(23rem, 88vw);
+    background: var(--field);
+    border-left: 1px solid var(--ink);
+    padding: 1.5rem 1.5rem 2rem;
+    overflow-y: auto;
+    transform: translateX(101%);
+    transition: transform .22s cubic-bezier(.3,.7,.3,1);
+  }
+  aside.open { transform: none; }
+  aside h2 {
+    font-family: Spectral, Georgia, serif;
+    font-size: 1.15rem; font-weight: 600; line-height: 1.25;
+    margin: 0 0 .35rem;
+  }
+  .cite {
+    font-size: .8rem; color: var(--ink-soft);
+    font-variant-numeric: tabular-nums; margin: 0 0 1.4rem;
+  }
+  .kindline {
+    font-size: .78rem; color: var(--ink-soft);
+    border-top: 1px solid var(--ink-soft); padding-top: .5rem;
+    margin: 0 0 1.4rem;
+  }
+  aside h3 {
+    font-size: .74rem; font-weight: 600; color: var(--ink-soft);
+    margin: 1.4rem 0 .5rem;
+  }
+  aside ul { list-style: none; margin: 0; padding: 0; }
+  aside li {
+    font-size: .82rem; line-height: 1.4; padding: .3rem 0;
+    display: flex; justify-content: space-between; gap: 1rem;
+  }
+  aside li button {
+    background: none; border: 0; padding: 0; text-align: left;
+    font: inherit; color: var(--ink); cursor: pointer;
+    text-decoration: underline; text-decoration-color: var(--edge);
+    text-underline-offset: 2px;
+  }
+  aside li span {
+    color: var(--ink-soft); font-variant-numeric: tabular-nums; flex: none;
+  }
+  .close {
+    position: absolute; top: 1rem; right: 1.25rem;
+    background: none; border: 0; font: inherit; font-size: 1.3rem;
+    color: var(--ink-soft); cursor: pointer; line-height: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    aside { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>What this syllabus rests on</h1>
+  <p class="sub">Every case and statute the assigned readings cite. Hollow circles are cases the readings lean on but never assign.</p>
+</header>
+
+<div class="views" role="tablist">
+  <button role="tab" id="tab-filtered" aria-selected="true">Filtered</button>
+  <button role="tab" id="tab-raw" aria-selected="false">Everything</button>
+</div>
+<p class="count" id="count"></p>
+
+<svg id="canvas"></svg>
+<div id="hover"><div class="h-t"></div><div class="h-m"></div><div class="h-l"></div></div>
+
+<div class="legend" id="legend"></div>
+
+<aside id="panel" aria-live="polite">
+  <button class="close" id="close" aria-label="Close details">&times;</button>
+  <h2 id="p-title"></h2>
+  <p class="cite" id="p-cite"></p>
+  <p class="kindline" id="p-kind"></p>
+  <div id="p-body"></div>
+</aside>
+
+<script>
+const ALL = /*__GRAPH_DATA__*/null;
+
+const KINDS = {
+  reading:   { label: "Assigned reading" },
+  case:      { label: "Cited, not assigned" },
+  authority: { label: "Statute or clause" },
+};
+
+const svg   = d3.select("#canvas");
+const root  = svg.append("g");
+const gLink = root.append("g");
+const gNode = root.append("g");
+const gLabel= root.append("g");
+const hover = document.getElementById("hover");
+const panel = document.getElementById("panel");
+
+let W = innerWidth, H = innerHeight;
+svg.attr("viewBox", [0, 0, W, H]);
+
+const zoom = d3.zoom().scaleExtent([.25, 6])
+  .on("zoom", e => root.attr("transform", e.transform));
+svg.call(zoom);
+
+let view = "filtered";
+let sim, nodes, links, byId, nbr, node, link, label;
+let focused = null;
+const active = new Set(Object.keys(KINDS));
+
+const r = d => d.kind === "authority"
+  ? 4.5 + Math.sqrt(d.degree) * 1.5
+  : 3.2 + Math.sqrt(d.degree) * 1.7;
+
+function render(which) {
+  view = which;
+  focused = null;
+  closePanel();
+  if (sim) sim.stop();
+  gLink.selectAll("*").remove();
+  gNode.selectAll("*").remove();
+  gLabel.selectAll("*").remove();
+
+  const src = ALL[which];
+  nodes = src.nodes.map(d => ({...d}));
+  links = src.links.map(d => ({...d}));
+  byId  = new Map(nodes.map(n => [n.id, n]));
+
+  nbr = new Map(nodes.map(n => [n.id, new Set()]));
+  links.forEach(l => { nbr.get(l.source).add(l.target); nbr.get(l.target).add(l.source); });
+
+  // Forces scale with size. A fixed charge that reads well at 20 nodes
+  // collapses 200 into a ball, because the centering force grows with the
+  // node count while repulsion does not.
+  const dense = links.length > 600;
+  const n = nodes.length;
+  const spread = Math.sqrt(n) * (dense ? 9 : 17);
+
+  sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id)
+      .distance(l => (l.type === "invokes" ? 1.6 : 1) * spread * .55)
+      .strength(l => (l.type === "invokes" ? .12 : .35) * (dense ? .5 : 1)))
+    .force("charge", d3.forceManyBody()
+      .strength(dense ? -140 : -520)
+      .distanceMax(dense ? 320 : 700))
+    // x/y beat forceCenter here: centering pulls everything to one point,
+    // these hold a loose field instead.
+    .force("x", d3.forceX(W / 2).strength(.035))
+    .force("y", d3.forceY(H / 2).strength(.05))
+    .force("collide", d3.forceCollide().radius(d => r(d) + (dense ? 5 : 14)).iterations(2));
+
+  link = gLink.selectAll("line").data(links).join("line")
+    .attr("class", "link")
+    .attr("stroke-width", d => Math.min(2.6, .4 + Math.log(d.weight) * .55))
+    .attr("stroke-opacity", d => (d.type === "invokes" ? .28 : .45) * (dense ? .55 : 1))
+    .attr("stroke-dasharray", d => d.type === "invokes" ? "2 3" : null);
+
+  node = gNode.selectAll("g").data(nodes).join("g")
+    .attr("class", "node")
+    .attr("tabindex", 0)
+    .on("click", (e, d) => { e.stopPropagation(); focus(d.id); })
+    .on("keydown", (e, d) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); focus(d.id); } })
+    .on("pointerenter", (e, d) => showHover(e, d))
+    .on("pointermove", e => placeHover(e))
+    .on("pointerleave", hideHover)
+    .on("focus", (e, d) => showHover(e, d))
+    .on("blur", hideHover)
+    .call(d3.drag()
+      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+  node.each(function (d) {
+    const g = d3.select(this);
+    if (d.kind === "authority") {
+      g.append("rect")
+        .attr("width", r(d) * 1.6).attr("height", r(d) * 1.6)
+        .attr("x", -r(d) * .8).attr("y", -r(d) * .8)
+        .attr("transform", "rotate(45)").attr("fill", "var(--brass)");
+    } else if (d.kind === "case") {
+      g.append("circle").attr("r", r(d)).attr("fill", "var(--field)")
+        .attr("stroke", "var(--ink)").attr("stroke-width", 1.3);
+    } else {
+      g.append("circle").attr("r", r(d)).attr("fill", "var(--ink)");
+    }
+  });
+
+  const cut = dense ? 14 : 6;
+  label = gLabel.selectAll("text").data(nodes.filter(d => d.degree >= cut))
+    .join("text").attr("class", "label").attr("text-anchor", "middle")
+    .text(d => d.label.length > 34 ? d.label.slice(0, 32) + "\u2026" : d.label);
+
+  sim.on("tick", () => {
+    link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+    label.attr("x", d => d.x).attr("y", d => d.y - r(d) - 4);
+  });
+
+  applyFilter();
+  describe();
+  legendCounts();
+}
+
+// ---------- hovercard ----------
+function showHover(e, d) {
+  const out = links.filter(l => (l.source.id || l.source) === d.id).length;
+  const inn = links.filter(l => (l.target.id || l.target) === d.id).length;
+
+  hover.querySelector(".h-t").textContent = d.label;
+  const meta = [KINDS[d.kind].label];
+  if (d.cite) meta.push(d.cite);
+  hover.querySelector(".h-m").textContent = meta.join("  \u00b7  ");
+
+  const top = links
+    .filter(l => (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id)
+    .sort((a, b) => b.weight - a.weight).slice(0, 3)
+    .map(l => {
+      const other = (l.source.id || l.source) === d.id ? l.target : l.source;
+      return (byId.get(other.id || other) || {}).label;
+    }).filter(Boolean);
+
+  let line = "";
+  if (d.kind === "reading") line = `cites ${out}, cited by ${inn}`;
+  else if (d.kind === "case") line = `cited by ${inn} reading${inn === 1 ? "" : "s"}`;
+  else line = `invoked by ${inn} reading${inn === 1 ? "" : "s"}`;
+  if (top.length) line += "  \u2014  " + top.join(", ");
+  hover.querySelector(".h-l").textContent = line;
+
+  hover.classList.add("on");
+  placeHover(e);
+}
+function placeHover(e) {
+  const b = hover.getBoundingClientRect();
+  let x = e.clientX + 16, y = e.clientY + 16;
+  if (x + b.width > innerWidth - 12)  x = e.clientX - b.width - 16;
+  if (y + b.height > innerHeight - 12) y = e.clientY - b.height - 16;
+  hover.style.left = x + "px";
+  hover.style.top  = y + "px";
+}
+function hideHover() { hover.classList.remove("on"); }
+
+// ---------- filter + focus ----------
+function visible(d) { return active.has(d.kind); }
+
+function applyFilter() {
+  const near = focused ? new Set([focused, ...nbr.get(focused)]) : null;
+  node.classed("faded",  d => !visible(d) || (near && !near.has(d.id)));
+  label.classed("faded", d => !visible(d) || (near && !near.has(d.id)));
+  link
+    .classed("faded", d => !visible(d.source) || !visible(d.target)
+      || (near && d.source.id !== focused && d.target.id !== focused))
+    .attr("stroke", d => (focused && (d.source.id === focused || d.target.id === focused))
+      ? "var(--flag)" : "var(--edge)");
+}
+
+function focus(id) {
+  focused = (focused === id) ? null : id;
+  applyFilter();
+  focused ? openPanel(byId.get(focused)) : closePanel();
+}
+
+// ---------- panel ----------
+function openPanel(d) {
+  document.getElementById("p-title").textContent = d.label;
+  document.getElementById("p-cite").textContent = d.cite || "";
+  document.getElementById("p-kind").textContent = KINDS[d.kind].label;
+
+  const out = [], inn = [];
+  links.forEach(l => {
+    if (l.source.id === d.id) out.push([byId.get(l.target.id), l.weight]);
+    if (l.target.id === d.id) inn.push([byId.get(l.source.id), l.weight]);
+  });
+  out.sort((a, b) => b[1] - a[1]);
+  inn.sort((a, b) => b[1] - a[1]);
+
+  const body = document.getElementById("p-body");
+  body.innerHTML = "";
+  if (d.kind === "reading") section(body, "This reading cites", out);
+  section(body, d.kind === "reading" ? "Cited by" : "Appears in", inn);
+  panel.classList.add("open");
+}
+
+function section(parent, heading, rows) {
+  if (!rows.length) return;
+  const h = document.createElement("h3");
+  h.textContent = heading + " (" + rows.length + ")";
+  parent.appendChild(h);
+  const ul = document.createElement("ul");
+  rows.forEach(([n, w]) => {
+    if (!n) return;
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.textContent = n.label;
+    b.onclick = () => { focused = null; focus(n.id); };
+    const sp = document.createElement("span");
+    sp.textContent = w;
+    li.append(b, sp);
+    ul.appendChild(li);
+  });
+  parent.appendChild(ul);
+}
+function closePanel() { panel.classList.remove("open"); }
+document.getElementById("close").onclick = () => focus(null);
+svg.on("click", () => { if (focused) focus(null); });
+
+// ---------- tabs ----------
+const t = ALL.thresholds;
+function describe() {
+  const f = ALL.filtered, w = ALL.raw;
+  document.getElementById("count").textContent = view === "filtered"
+    ? `${f.nodes.length} nodes, ${f.links.length} edges. Citations mentioned at least ${t.min_weight} times, top ${t.max_per_doc} per reading, statutes shared by ${t.min_auth_docs}+ readings.`
+    : `${w.nodes.length} nodes, ${w.links.length} edges. Every citation the extractor found, including one-off footnote mentions.`;
+}
+["filtered", "raw"].forEach(v => {
+  document.getElementById("tab-" + v).onclick = () => {
+    if (view === v) return;
+    ["filtered", "raw"].forEach(o =>
+      document.getElementById("tab-" + o).setAttribute("aria-selected", String(o === v)));
+    svg.transition().duration(200).call(zoom.transform, d3.zoomIdentity);
+    render(v);
+  };
+});
+
+// ---------- legend ----------
+const legend = d3.select("#legend");
+Object.entries(KINDS).forEach(([kind, meta]) => {
+  const btn = legend.append("button").attr("aria-pressed", "true")
+    .on("click", function () {
+      active.has(kind) ? active.delete(kind) : active.add(kind);
+      d3.select(this).attr("aria-pressed", String(active.has(kind)));
+      applyFilter();
+    });
+  const s = btn.append("svg").attr("width", 14).attr("height", 14);
+  if (kind === "authority") {
+    s.append("rect").attr("x", 3).attr("y", 3).attr("width", 8).attr("height", 8)
+      .attr("transform", "rotate(45 7 7)").attr("fill", "var(--brass)");
+  } else if (kind === "case") {
+    s.append("circle").attr("cx", 7).attr("cy", 7).attr("r", 4.4)
+      .attr("fill", "var(--field)").attr("stroke", "var(--ink)").attr("stroke-width", 1.3);
+  } else {
+    s.append("circle").attr("cx", 7).attr("cy", 7).attr("r", 4.6).attr("fill", "var(--ink)");
+  }
+  btn.append("span").attr("data-kind", kind).text(meta.label);
+});
+
+legend.append("hr");
+[["cites", null, "One document cites a case"],
+ ["invokes", "2 3", "A document invokes a statute or clause"]].forEach(([, dash, text]) => {
+  const row = legend.append("div").attr("class", "edge-key");
+  const s2 = row.append("svg").attr("width", 14).attr("height", 14);
+  s2.append("line").attr("x1", 0).attr("y1", 7).attr("x2", 14).attr("y2", 7)
+    .attr("stroke", "var(--edge)").attr("stroke-width", 1.6)
+    .attr("stroke-dasharray", dash);
+  row.append("span").text(text);
+});
+legend.append("div").attr("class", "edge-key")
+  .style("opacity", ".8").style("margin-top", ".15rem")
+  .text("Line thickness: how often it is cited");
+
+function legendCounts() {
+  Object.keys(KINDS).forEach(k => {
+    const n = ALL[view].nodes.filter(d => d.kind === k).length;
+    const el = document.querySelector(`[data-kind="${k}"]`);
+    if (el) el.textContent = KINDS[k].label + " \u00b7 " + n;
+  });
+}
+
+addEventListener("resize", () => {
+  W = innerWidth; H = innerHeight;
+  svg.attr("viewBox", [0, 0, W, H]);
+  if (sim) sim.force("x", d3.forceX(W / 2).strength(.035))
+               .force("y", d3.forceY(H / 2).strength(.05)).alpha(.2).restart();
+});
+
+render("filtered");
+</script>
+</body>
+</html>
