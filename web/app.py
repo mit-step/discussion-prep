@@ -176,6 +176,7 @@ def submit_response(session_id: str, body: ResponseIn):
             print("counterargument failed: " + repr(e))
 
         if challenge:
+            print("challenge from " + str(challenge.get("source_name")))
             session.challenged_chunks.append(challenge["source_chunk"])
             session.pending_question = challenge["text"]
         else:
