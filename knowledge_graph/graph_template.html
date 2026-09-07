@@ -4,19 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Citation map — Land Use and Environmental Law</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <style>
   :root {
-    --field:     #DDE1E6;
-    --field-dim: #C9CFD6;
-    --ink:       #132A44;
-    --ink-soft:  #4A6076;
-    --brass:     #8A6D1B;
-    --flag:      #A6302A;
-    --edge:      #8FA0B0;
+    /* Site palette: Ghost White bg, Coffee Bean ink, Vivid Royal + Glaucous
+       for the two supporting node kinds, Scarlet Fire as the one accent. */
+    --field:     #FBFBFF;
+    --field-dim: #E7E9F7;
+    --ink:       #0D0106;
+    --ink-soft:  rgba(13, 1, 6, .52);
+    --brass:     #3626A7;
+    --flag:      #FF331F;
+    --edge:      #657ED4;
   }
 
   * { box-sizing: border-box; }
@@ -25,7 +24,7 @@
     margin: 0; height: 100%;
     background: var(--field);
     color: var(--ink);
-    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow: hidden;
   }
 
@@ -36,7 +35,6 @@
     pointer-events: none;
   }
   h1 {
-    font-family: Spectral, Georgia, serif;
     font-weight: 600; font-size: 1.35rem; letter-spacing: -0.01em;
     margin: 0; line-height: 1;
   }
@@ -44,6 +42,17 @@
     font-size: .8rem; color: var(--ink-soft); margin: 0;
     max-width: 34ch; line-height: 1.45;
   }
+  .back-link {
+    pointer-events: auto;
+    align-self: center;
+    flex: none;
+    font-size: .8rem; color: var(--ink-soft);
+    text-decoration: none; white-space: nowrap;
+    border: 1px solid var(--ink-soft); border-radius: 4px;
+    padding: .35rem .8rem;
+  }
+  .back-link:hover { color: var(--ink); border-color: var(--ink); }
+  .back-link:focus-visible { outline: 2px solid var(--flag); outline-offset: 2px; }
 
   .legend {
     position: absolute; bottom: 1.25rem; left: 1.5rem; z-index: 3;
@@ -97,7 +106,7 @@
   }
   #hover.on { opacity: 1; }
   #hover .h-t {
-    font-family: Spectral, Georgia, serif; font-size: .95rem;
+    font-weight: 600; font-size: .95rem;
     line-height: 1.25; margin-bottom: .2rem;
   }
   #hover .h-m {
@@ -128,7 +137,6 @@
   }
   aside.open { transform: none; }
   aside h2 {
-    font-family: Spectral, Georgia, serif;
     font-size: 1.15rem; font-weight: 600; line-height: 1.25;
     margin: 0 0 .35rem;
   }
@@ -173,6 +181,7 @@
 <body>
 
 <header>
+  <a class="back-link" href="/discussion-prep/library">&larr; Library</a>
   <h1>What this syllabus rests on</h1>
   <p class="sub">Every case and statute the assigned readings cite. Hollow circles are cases the readings lean on but never assign.</p>
 </header>
@@ -314,10 +323,32 @@ function render(which) {
     node.attr("transform", d => `translate(${d.x},${d.y})`);
     label.attr("x", d => d.x).attr("y", d => d.y - r(d) - 4);
   });
+  // The layout keeps drifting until alpha decays, so fit the view once it
+  // settles rather than to the initial (still-collapsing) positions.
+  sim.on("end", () => zoomToFit());
 
   applyFilter();
   describe();
   legendCounts();
+}
+
+// Frame every node with some breathing room, never zoomed in past 1x — the
+// point is to start zoomed OUT, not to crop in on a tight cluster.
+function zoomToFit(padding = 56) {
+  if (!nodes.length) return;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  nodes.forEach(d => {
+    if (d.x < x0) x0 = d.x;
+    if (d.x > x1) x1 = d.x;
+    if (d.y < y0) y0 = d.y;
+    if (d.y > y1) y1 = d.y;
+  });
+  const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
+  const minScale = zoom.scaleExtent()[0];
+  const scale = Math.max(minScale, Math.min(1, (W - padding * 2) / w, (H - padding * 2) / h));
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const transform = d3.zoomIdentity.translate(W / 2, H / 2).scale(scale).translate(-cx, -cy);
+  svg.transition().duration(450).call(zoom.transform, transform);
 }
 
 // ---------- hovercard ----------
@@ -435,7 +466,6 @@ function describe() {
     if (view === v) return;
     ["filtered", "raw"].forEach(o =>
       document.getElementById("tab-" + o).setAttribute("aria-selected", String(o === v)));
-    svg.transition().duration(200).call(zoom.transform, d3.zoomIdentity);
     render(v);
   };
 });
