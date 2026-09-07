@@ -250,6 +250,13 @@ def spa_fallback(full_path: str):
             status_code=503,
             detail="Frontend not built — run `npm run build` in web/frontend/",
         )
+    # Vite copies web/frontend/public/* (favicon.svg, kelo-syllabus.png, ...)
+    # straight into dist/ root rather than dist/assets/, so they're only
+    # reachable here — serve them if the path resolves to a real file.
+    if full_path:
+        candidate = (FRONTEND_DIST / full_path).resolve()
+        if candidate.is_file() and candidate.is_relative_to(FRONTEND_DIST.resolve()):
+            return FileResponse(str(candidate))
     return FileResponse(str(index_path))
 
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useUser } from "./context/UserContext";
+import { AboutPage } from "./pages/AboutPage";
 import { ChatPage } from "./pages/ChatPage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -16,6 +17,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/about" element={<AboutPage />} />
       <Route
         path="/library"
         element={

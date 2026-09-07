@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 
 export function LoginPage() {
@@ -25,9 +25,16 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-page">
-      <form className="login-card" onSubmit={handleSubmit}>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <header className="app-header">
         <h1>Discussion Prep</h1>
+        <Link to="/about" className="knowledge-graph-link">
+          About
+        </Link>
+      </header>
+      <div className="login-page">
+      <form className="login-card" onSubmit={handleSubmit}>
+        <h1>Sign in</h1>
         <p>
           Enter your name and MIT email to start practicing. This is a demo login (no password) — it
           will be replaced by MIT Touchstone.
@@ -51,6 +58,7 @@ export function LoginPage() {
           {busy ? "Signing in…" : "Continue"}
         </button>
       </form>
+      </div>
     </div>
   );
 }

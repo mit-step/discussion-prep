@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, BASE } from "../api/client";
 import { ProfileMenu } from "../components/ProfileMenu";
 import { ReadingCard } from "../components/ReadingCard";
@@ -69,6 +70,9 @@ export function LibraryPage() {
             >
               Knowledge Graph
             </a>
+            <Link className="knowledge-graph-link" to="/about">
+              About
+            </Link>
             <ProfileMenu />
           </div>
         </div>

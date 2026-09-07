@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { ReportCard } from "../components/ReportCard";
 import type { TranscriptDetail } from "../types";
@@ -46,14 +46,14 @@ export function TranscriptPage() {
           <div className="transcript-meta">{formatDate(transcript.created_at)}</div>
         </div>
 
-        <button
-          type="button"
-          className="secondary"
-          style={{ alignSelf: "flex-start" }}
-          onClick={() => navigate("/library")}
-        >
-          ← Back to Library
-        </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button type="button" className="secondary" onClick={() => navigate("/library")}>
+            ← Back to Library
+          </button>
+          <Link to="/about" className="knowledge-graph-link">
+            About
+          </Link>
+        </div>
 
         <ReportCard evaluation={transcript.evaluation} />
 

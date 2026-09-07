@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { ChatBubble, type BubbleRole } from "../components/ChatBubble";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -136,6 +136,9 @@ export function ChatPage() {
         </button>
         <h1>{initialTitle ?? "Discussion Prep"}</h1>
         <div className="app-header-actions">
+          <Link to="/about" className="knowledge-graph-link">
+            About
+          </Link>
           {roundsTotal !== null && phase !== "starting" && (
             <span className="round-badge">
               {phase === "completed" ? "Evaluation" : `Round ${round}/${roundsTotal}`}

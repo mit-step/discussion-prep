@@ -875,3 +875,369 @@ button.danger {
   flex-direction: column;
   gap: 0.4rem;
 }
+
+/* --- About page: scroll-driven data story --- */
+
+.about-page {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.about-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.about-hero {
+  min-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1.1rem;
+  padding: 3rem 1.5rem;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.about-hero h1 {
+  font-size: clamp(2rem, 5.5vw, 3.4rem);
+  line-height: 1.15;
+  margin: 0;
+}
+
+.about-hero-sub {
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 620px;
+  margin: 0;
+}
+
+.about-scroll-cue {
+  margin-top: 1.5rem;
+  width: 22px;
+  height: 34px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.about-scroll-cue span {
+  width: 4px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: about-scroll-cue-move 1.6s ease-in-out infinite;
+}
+
+@keyframes about-scroll-cue-move {
+  0% { transform: translateY(0); opacity: 1; }
+  70% { transform: translateY(10px); opacity: 0; }
+  71% { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.about-section {
+  padding: 6rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-section:nth-of-type(even) {
+  background: var(--card-bg);
+}
+
+.about-section-inner {
+  max-width: 680px;
+  width: 100%;
+}
+
+.about-section-inner h2 {
+  font-size: 1.7rem;
+  margin: 0 0 1.6rem;
+}
+
+.reveal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.reveal-item {
+  position: relative;
+  padding-left: 1.5rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.reveal-item.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-item code {
+  background: var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+}
+
+.about-section:nth-of-type(even) .reveal-item code {
+  background: var(--bg);
+}
+
+/* --- Corpus scrollytelling section --- */
+
+.scrolly-corpus {
+  display: block;
+  padding-top: 5rem;
+}
+
+.about-section-header-only {
+  margin: 0 auto 2.5rem;
+  text-align: center;
+}
+
+.scrolly-flex {
+  display: flex;
+  gap: 3rem;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.scrolly-sticky {
+  flex: 1.05;
+  position: sticky;
+  top: 8vh;
+  align-self: flex-start;
+}
+
+.scrolly-image-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  background: #fff;
+}
+
+.scrolly-image-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.scrolly-frame {
+  position: absolute;
+  border: 3px solid var(--accent);
+  border-radius: 4px;
+  box-shadow: 0 0 0 4px rgba(255, 51, 31, 0.12);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+.scrolly-frame.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.scrolly-caption {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.scrolly-steps {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrolly-step {
+  min-height: 78vh;
+  display: flex;
+  align-items: center;
+}
+
+.scrolly-step:first-child {
+  min-height: 55vh;
+}
+
+.scrolly-step-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  opacity: 0.4;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.4s ease;
+}
+
+.scrolly-step-card p { margin: 0 0 0.75rem; }
+.scrolly-step-card p:last-child { margin-bottom: 0; }
+
+.scrolly-step-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.scrolly-step-card.active {
+  opacity: 1;
+  transform: translateY(0);
+  border-color: var(--accent);
+}
+
+.scrolly-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.scrolly-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.scrolly-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.scrolly-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* Tumbler: digit columns that spin a full lap and click into place, like a combination lock */
+
+.tumbler {
+  display: inline-flex;
+}
+
+.tumbler-digit {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+}
+
+.tumbler-strip {
+  display: flex;
+  flex-direction: column;
+  transform: translateY(0);
+  transition-property: transform;
+  transition-duration: 900ms;
+}
+
+.tumbler-row {
+  height: 1em;
+  line-height: 1em;
+  display: block;
+  text-align: center;
+}
+
+.tumbler-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tumbler-char.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.about-closing {
+  padding: 7rem 1.5rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+.about-closing h2 {
+  font-size: 1.8rem;
+  margin: 0 0 0.6rem;
+}
+
+.about-closing p {
+  color: var(--muted);
+  margin: 0 0 1.5rem;
+}
+
+.about-closing-cta {
+  display: inline-block;
+  background: var(--accent);
+  color: #fbfbff;
+  text-decoration: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+@media (max-width: 880px) {
+  .scrolly-flex {
+    flex-direction: column;
+  }
+
+  .scrolly-sticky {
+    position: sticky;
+    top: 0;
+    align-self: stretch;
+    z-index: 2;
+    background: var(--bg);
+    padding: 1rem 0;
+    margin: 0 -1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .scrolly-image-wrap {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .scrolly-step-card {
+    padding: 1.25rem 1.4rem;
+    font-size: 0.98rem;
+  }
+}
