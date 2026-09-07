@@ -15,6 +15,9 @@ from pydantic import BaseModel
 # same as evaluator-agent/Agent/rag_tool.py reaches into rag_hybrid/.
 _EVALUATOR_AGENT_PATH = Path(__file__).resolve().parent.parent / "evaluator-agent"
 sys.path.insert(0, str(_EVALUATOR_AGENT_PATH))
+sys.path.append(str(Path(__file__).resolve().parent.parent / "counterargument"))
+
+from pipeline import challenge_for  # noqa: E402
 
 from Agent.socratic_agent import SocraticAgent  # noqa: E402
 from Schemas.schemas import SocraticExchange, StudentArgument  # noqa: E402
@@ -89,6 +92,7 @@ class Session:
         self.round_num = 0
         self.pending_question: str | None = None
         self.status = "awaiting_argument"
+        self.challenged_chunks: list[str] = []
 
 
 sessions: dict[str, Session] = {}
@@ -152,7 +156,33 @@ def submit_response(session_id: str, body: ResponseIn):
 
     if session.round_num < ROUNDS:
         session.round_num += 1
-        session.pending_question = session.agent.ask_question(session.argument, round_num=session.round_num)
+
+        # A counterargument grounded in the assigned readings, when the student
+        # made an argument something in the corpus opposes. Falls through to the
+        # normal Socratic question otherwise: no argument in the turn, nothing
+        # opposing it, or a failed Parley call. A failed challenge must never
+        # break a student's session.
+        challenge = None
+        try:
+            conn = db.mvp_connect_vec()
+            try:
+                challenge = challenge_for(
+                    conn, body.response_text,
+                    exclude_chunk_ids=session.challenged_chunks,
+                )
+            finally:
+                conn.close()
+        except Exception as e:
+            print("counterargument failed: " + repr(e))
+
+        if challenge:
+            session.challenged_chunks.append(challenge["source_chunk"])
+            session.pending_question = challenge["text"]
+        else:
+            session.pending_question = session.agent.ask_question(
+                session.argument, round_num=session.round_num
+            )
+
         return {"round": session.round_num, "rounds_total": ROUNDS, "question": session.pending_question}
 
     session.status = "completed"
