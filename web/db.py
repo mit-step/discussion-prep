@@ -29,6 +29,15 @@ def app_connect() -> sqlite3.Connection:
 def mvp_connect() -> sqlite3.Connection:
     return _connect(MVP_DB_PATH)
 
+def mvp_connect_vec() -> sqlite3.Connection:
+    """mvp.db with sqlite-vec loaded, for warrant retrieval. Read-only."""
+    import sqlite_vec
+    conn = _connect(MVP_DB_PATH)
+    conn.enable_load_extension(True)
+    sqlite_vec.load(conn)
+    conn.enable_load_extension(False)
+    return conn
+
 
 def init_app_db() -> None:
     with app_connect() as conn:
